@@ -19,7 +19,9 @@ jobs:
         run: mkdir -p docs
 
       - name: Export GitHub SBOM
-        run: gh sbom -r ${{ github.repository }} --format cyclonedx-json > docs/sbom.cdx.json
+        run: |
+          gh api /repos/${{ github.repository }}/dependency-graph/sbom \
+            --jq '.sbom' > docs/sbom.spdx.json
         env:
           GH_TOKEN: ${{ github.token }}
 
@@ -27,4 +29,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: sbom-artifact
-          path: docs/sbom.cdx.json
+          path: docs/sbom.spdx.json
