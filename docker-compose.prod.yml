@@ -1,0 +1,17 @@
+services:
+  db:
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    restart: always
+
+  openmrs:
+    environment:
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "80:8080"
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 2g
