@@ -8,7 +8,6 @@
 | **Versie** | 3.10.0 |
 | **Taal** | Java (Maven-module, Spring MVC) |
 | **Broncode** | https://github.com/openmrs/openmrs-module-htmlformentry/tree/3.10.0 |
-| **Lokale clone** | `C:\Users\mick\projectenLeerjaar2\openmrs-module-htmlformentry` |
 
 ---
 
@@ -16,7 +15,7 @@
 
 ### 1. Kritieke functionaliteit
 
-De module is verantwoordelijk voor het weergeven, invullen en opslaan van alle forms binnen  OpenMRS. Elke interactie raakt direct aan persoonsgegevens en medische gegevens van de avg. Een beveiligingsfout in deze module heeft daardoor onmiddellijk impact.
+De module is verantwoordelijk voor het weergeven, invullen en opslaan van alle forms binnen  OpenMRS. Elke interactie raakt direct aan persoonsgegevens en medische gegevens van de AVG. Een beveiligingsfout in deze module heeft daardoor onmiddellijk impact.
 
 ### 2. Breedte van de scope
 
@@ -30,7 +29,7 @@ De module raakt de drie relevante regelgebieden van de NEN-7510:
 | **Invoervalidatie / data-integriteit** | Verwerking van vrije HTML/SQL-invoer via formuliervelden |
 
 
-### 4. Complexiteit en omvang
+### 3. Complexiteit en omvang
 
 De module telt meerdere tientallen Java-klassen, een eigen tag-library, een Velocity/Freemarker templatelaag en integratiepunten met de OpenMRS Core API. De complexiteit is groot genoeg voor een zinvolle analyse.
 
