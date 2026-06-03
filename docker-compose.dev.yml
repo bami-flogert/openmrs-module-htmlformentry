@@ -1,0 +1,17 @@
+services:
+  db:
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_PASSWORD: openmrs
+    ports:
+      - "3306:3306"
+
+  openmrs:
+    environment:
+      DB_PASSWORD: openmrs
+      OMRS_DEV_DEBUG_PORT: 1044
+    ports:
+      - "8080:8080"
+      - "1044:1044"
+    volumes:
+      - ./omod/target:/openmrs/distribution/openmrs_modules
