@@ -1,0 +1,12 @@
+services:
+  db:
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+
+  openmrs:
+    environment:
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "8080:8080"
+    restart: on-failure
