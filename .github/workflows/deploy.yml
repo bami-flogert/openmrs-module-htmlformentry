@@ -5,6 +5,7 @@ on:
     branches:
       - development
       - pre-release
+      - acceptatie
       - main
 
 permissions:
@@ -67,6 +68,25 @@ jobs:
       - name: Deploy to test
         run: |
           docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+
+  deploy-accept:
+    needs: build
+    if: github.ref == 'refs/heads/acceptatie'
+    runs-on: ubuntu-latest
+    environment:
+      name: acceptatie
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: omod
+          path: omod/target/
+      - name: Deploy to acceptatie
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.accept.yml up -d --build
         env:
           MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}

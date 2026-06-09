@@ -2,7 +2,7 @@ name: Generate GitHub SBOM
 
 on:
   push:
-    branches: [ main, development, pre-release ]
+    branches: [ main, development, pre-release, acceptatie ]
 
 jobs:
   sbom:
