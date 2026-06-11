@@ -63,7 +63,7 @@
 
 **Huidige pipeline-maatregelen (bewijs):**
 
-- SPDX SBOM via [`sbom.yml`](../../.github/workflows/sbom.yml) (GitHub dependency graph)
+- SPDX SBOM via [`deploy.yml`](../../.github/workflows/deploy.yml) job `sbom` (GitHub dependency graph, gebundeld in `otap-build-bundle`)
 - CycloneDX SBOM via [`snyk.yml`](../../.github/workflows/snyk.yml) (`snyk sbom`)
 - Dependabot voor Maven, GitHub Actions en Docker ([`dependabot.yml`](../../.github/dependabot.yml))
 - Dependency review op pull requests ([`ci.yml`](../../.github/workflows/ci.yml))
@@ -85,7 +85,7 @@ Zie ook bijlage B ([`02-pipeline-compliance.md`](02-pipeline-compliance.md)) en 
 | A | Gap-analyse | [`01-gap-analyse.md`](01-gap-analyse.md) | Aanwezig |
 | B | Mini-complianceverslag pipeline | [`02-pipeline-compliance.md`](02-pipeline-compliance.md) | Aanwezig (bijgewerkt 2026-06-09) |
 | — | OTAP-pipeline (operationeel) | [`../otap.md`](../otap.md) | Aanwezig |
-| C | SBOM (CycloneDX JSON) | `snyk.yml` artifact `snyk-sbom.json` | ⚠️ Gedeeltelijk — gegenereerd bij Snyk-run; SPDX ook via `sbom.yml` |
+| C | SBOM | `deploy.yml` — `build-sbom` / `otap-build-bundle` (SPDX); `snyk.yml` — `snyk-sbom.json` (CycloneDX) | ✅ Aanwezig — SPDX gekoppeld aan build-run; CycloneDX via Snyk |
 | D | SAST-output (Snyk) | `snyk.yml` artifacts `snyk-results.json`, `snyk-code-results.json` | ⚠️ Gedeeltelijk — vereist `SNYK_TOKEN`; `continue-on-error: true` |
 | E | Traceability matrix | _nog te maken_ | Te doen |
 | F | Risicomatrix | _nog te maken_ | Te doen |

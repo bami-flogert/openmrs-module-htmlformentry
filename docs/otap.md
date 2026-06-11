@@ -60,12 +60,15 @@ Workflow: [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml)
 | Stap | Job | Beschrijving | Status |
 |------|-----|--------------|--------|
 | 1 | `build` | Maven bouwt OMOD (`mvn package -DskipTests`); artefact geüpload | ✅ |
-| 2 | `unit-test` | Maven unit tests + JaCoCo-rapport (parallel met build) | ✅ |
-| 3 | `deploy-*` | Deploy naar omgeving die bij de branch hoort; `needs: [build, unit-test]` | ✅ |
-| 4 | Smoke test | OpenMRS bereikbaar via `/openmrs` ([`smoke-test.sh`](../.github/scripts/smoke-test.sh)) | ✅ |
-| 5 | Tear down | `docker compose down -v` (ephemeral runner) | ✅ |
+| 2 | `sbom` | SPDX SBOM via GitHub dependency graph (parallel met build) | ✅ |
+| 3 | `unit-test` | Maven unit tests + JaCoCo-rapport (parallel met build) | ✅ |
+| 4 | `bundle` | OMOD + SBOM + provenance (`build-run.json`) in één artifact | ✅ |
+| 5 | `deploy-*` | Deploy naar omgeving die bij de branch hoort | ✅ |
+| 6 | Smoke test | OpenMRS bereikbaar via `/openmrs` ([`smoke-test.sh`](../.github/scripts/smoke-test.sh)) | ✅ |
+| 7 | Tear down | `docker compose down -v` (ephemeral runner) | ✅ |
+| 8 | `publish-prod-release` | Alleen op `main`: OMOD + SBOM + provenance naar GitHub Release | ✅ |
 
-Hetzelfde gebouwde OMOD-artefact wordt per run geüpload en in de deploy-job gedownload (immutable promotion binnen één workflow-run).
+Hetzelfde gebouwde OMOD-artefact en SBOM uit één workflow-run worden gebundeld in `otap-build-bundle` (365 dagen retentie). Deploy downloadt het OMOD; productie publiceert daarnaast naar GitHub Releases (`v3.10.0`).
 
 ### Quality gates
 
@@ -102,9 +105,8 @@ Parallel draait [Snyk](../.github/workflows/snyk.yml) (SCA + SAST + CycloneDX SB
 | Workflow | Bestand | Trigger | Doel |
 |----------|---------|---------|------|
 | CI | `ci.yml` | `pull_request` | Validatie vóór merge |
-| Deploy OTAP | `deploy.yml` | `push` OTAP-branches | Build, test, deploy |
-| SBOM (SPDX) | `sbom.yml` | `push` OTAP-branches | GitHub dependency-graph SBOM |
-| Snyk | `snyk.yml` | `push` + `pull_request` | SAST/SCA + CycloneDX SBOM |
+| Deploy OTAP | `deploy.yml` | `push` OTAP-branches | Build, SBOM, test, bundle, deploy, prod release |
+| Snyk | `snyk.yml` | `push` + `pull_request` | SAST/SCA + CycloneDX SBOM (aanvullend op SPDX in deploy) |
 
 ---
 
@@ -155,7 +157,7 @@ Optioneel ook `dependency-review` en Snyk als required checks.
 | Ephemeral GitHub-hosted runners | Geen persistente OTAP-servers; deploy valideert proces, niet productie-hosting | ⚠️ |
 | Dev-compose hardcoded wachtwoorden | `docker-compose.dev.yml` gebruikt `root` / `openmrs` i.p.v. secrets | ⚠️ |
 | Docker image `:latest` | OpenMRS-image niet gepind op digest — reproduceerbaarheid | ⚠️ |
-| SBOM los van build-run | SPDX- en CycloneDX-SBOM in aparte workflows | ⚠️ |
+| CycloneDX SBOM alleen via Snyk | SPDX zit in deploy-bundle; CycloneDX apart in `snyk.yml` | ⚠️ |
 | Legacy Travis CI | [`.travis.yml`](../.travis.yml) nog aanwezig naast GitHub Actions | ⚠️ |
 
 Voor echte gescheiden OTAP-hosting zijn self-hosted runners of deploy naar externe VMs nodig.
@@ -164,7 +166,6 @@ Voor echte gescheiden OTAP-hosting zijn self-hosted runners of deploy naar exter
 
 ## Openstaande verbeteringen
 
-- SBOM koppelen aan build-artefact (één traceerbare build-run)
 - Docker image pinning in `docker-compose.yml`
 - Dev-compose secrets via environment variables
 - Concurrency-bescherming op deploy-jobs
