@@ -1,117 +1,173 @@
-# OTAP-pipeline
+# OTAP-pipeline — Ontwikkeling, Test, Acceptatie, Productie
 
-Dit document beschrijft de OTAP-omgevingen (Ontwikkeling, Test, Acceptatie, Productie) en hoe deployments via GitHub Actions verlopen.
+**Module:** OpenMRS HTML Form Entry v3.10.0  
+**Datum:** 2026-06-09  
+**Scope:** GitHub Actions CI/CD-pipeline en omgevingspromotie  
+**Normkader:** NEN-7510:2024-2 (controls A.8.3 · A.8.5 · A.8.15)
+
+---
+
+## Relatie met overige documentatie
+
+| Document | Relatie |
+|----------|---------|
+| [`auditrapport/00-auditrapport.md`](auditrapport/00-auditrapport.md) | Hoofdrapport security & compliance audit |
+| [`auditrapport/02-pipeline-compliance.md`](auditrapport/02-pipeline-compliance.md) | **Bijlage B** — NEN-7510-mapping van pipeline-maatregelen op controls |
+| [`auditrapport/01-gap-analyse.md`](auditrapport/01-gap-analyse.md) | **Bijlage A** — gap-analyse module-code (A.8.3 / A.8.5 / A.8.15) |
+| [`module-keuze.md`](module-keuze.md) | Motivatie modulekeuze en NEN-7510-relevantie |
+| [`onderhoudbaarheid/01-nfr-onderhoudbaarheid.md`](onderhoudbaarheid/01-nfr-onderhoudbaarheid.md) | JaCoCo-coverage en quality gates (NFR-M5 / NFR-T1) |
+| [`security.md`](security.md) | Vulnerability disclosure policy |
+
+Dit document beschrijft de **operationele OTAP-keten**: welke branches naar welke omgeving deployen, welke quality gates gelden en welke workflows betrokken zijn. Voor de compliance-mapping per NEN-control zie bijlage B.
+
+---
+
+## Legenda
+
+| Status | Betekenis |
+|--------|-----------|
+| ✅ Aanwezig | Maatregel is geïmplementeerd in workflow of compose |
+| ⚠️ Gedeeltelijk | Aanwezig maar met bekende beperking of handmatige stap |
+| ❌ Afwezig | Nog niet geïmplementeerd |
+
+---
 
 ## Omgevingen en branches
 
-| OTAP-fase      | Branch        | GitHub Environment | Docker Compose overlay        |
-|----------------|---------------|--------------------|-------------------------------|
-| Ontwikkeling   | `development` | `dev`              | `docker-compose.dev.yml`      |
-| Test           | `pre-release` | `test`             | `docker-compose.test.yml`     |
-| Acceptatie     | `acceptatie`  | `acceptatie`       | `docker-compose.accept.yml`   |
-| Productie      | `main`        | `prod`             | `docker-compose.prod.yml`     |
+| OTAP-fase | Branch | GitHub Environment | Docker Compose overlay |
+|-----------|--------|--------------------|-------------------------|
+| Ontwikkeling | `development` | `dev` | `docker-compose.dev.yml` |
+| Test | `pre-release` | `test` | `docker-compose.test.yml` |
+| Acceptatie | `acceptatie` | `acceptatie` | `docker-compose.accept.yml` |
+| Productie | `main` | `prod` | `docker-compose.prod.yml` |
 
-Alle omgevingen gebruiken [`docker-compose.yml`](../docker-compose.yml) als basis (MySQL + OpenMRS reference application).
+Alle omgevingen gebruiken [`docker-compose.yml`](../docker-compose.yml) als basis (MySQL 5.6 + OpenMRS reference application).
 
-## Promotie-flow
-
-Code hoort sequentieel door de omgevingen te gaan:
+### Promotie-flow
 
 ```
 development → pre-release → acceptatie → main
 ```
 
-Elke push naar een OTAP-branch triggert [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml):
+Code hoort sequentieel door deze omgevingen te gaan. Elke fase heeft een eigen branch, GitHub Environment en compose-overlay.
 
-1. **Build** — Maven bouwt het OMOD-artefact (`mvn package -DskipTests`).
-2. **Unit-test** — Maven draait alle unit tests (`mvn test`). Deploy wordt geblokkeerd als tests falen.
-3. **Deploy** — Alleen de job die bij de branch hoort, start Docker Compose met de juiste overlay.
-4. **Smoke test** — Na deploy wordt gecontroleerd of OpenMRS bereikbaar is (`/openmrs` endpoint).
-5. **Tear down** — Containers worden gestopt (ephemeral runner).
+---
 
-`build` en `unit-test` draaien parallel. Alle deploy-jobs hebben `needs: [build, unit-test]`.
+## Pipeline-overzicht (push naar OTAP-branch)
 
-Hetzelfde gebouwde artefact wordt per run geüpload en gedownload in de deploy-job (immutable promotion binnen één workflow-run).
+Workflow: [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml)
+
+| Stap | Job | Beschrijving | Status |
+|------|-----|--------------|--------|
+| 1 | `build` | Maven bouwt OMOD (`mvn package -DskipTests`); artefact geüpload | ✅ |
+| 2 | `unit-test` | Maven unit tests + JaCoCo-rapport (parallel met build) | ✅ |
+| 3 | `deploy-*` | Deploy naar omgeving die bij de branch hoort; `needs: [build, unit-test]` | ✅ |
+| 4 | Smoke test | OpenMRS bereikbaar via `/openmrs` ([`smoke-test.sh`](../.github/scripts/smoke-test.sh)) | ✅ |
+| 5 | Tear down | `docker compose down -v` (ephemeral runner) | ✅ |
+
+Hetzelfde gebouwde OMOD-artefact wordt per run geüpload en in de deploy-job gedownload (immutable promotion binnen één workflow-run).
 
 ### Quality gates
 
-| Gate            | Wanneer        | Actie bij falen                          |
-|-----------------|----------------|------------------------------------------|
-| Unit tests      | Vóór deploy    | Deploy-jobs starten niet                   |
-| Smoke test      | Na deploy      | Deploy-job faalt; geen succesvolle release |
-| JaCoCo rapport  | Na unit tests  | Geüpload als artifact (audit/evidence)     |
+| Gate | Wanneer | Actie bij falen | NEN-relevantie |
+|------|---------|-----------------|----------------|
+| Unit tests | Vóór deploy | Deploy start niet | A.8.15 — aantoonbare kwaliteitscontrole |
+| Smoke test | Na deploy | Deploy-job faalt | A.8.15 — deployment-validatie |
+| JaCoCo rapport | Na unit tests | Artifact voor audit/evidence | A.8.15 — testbewijs (zie NFR-T1) |
+| PR CI | Vóór merge | Merge blokkeerbaar via branch protection | A.8.3 / A.8.5 — gecontroleerde wijzigingen |
 
-Het smoke-test script staat in [`.github/scripts/smoke-test.sh`](../.github/scripts/smoke-test.sh). Productie gebruikt poort 80; overige omgevingen poort 8080.
+Productie smoke test gebruikt poort **80**; overige omgevingen poort **8080**.
+
+---
+
+## Pull request-validatie
+
+Workflow: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)  
+Trigger: `pull_request` naar `development`, `pre-release`, `acceptatie` of `main`
+
+| Job | Doel |
+|-----|------|
+| `build` | Compileert en bouwt OMOD |
+| `unit-test` | Zelfde testgate als deploy-pipeline |
+| `dependency-review` | Controle op kwetsbare nieuwe dependencies |
+
+Parallel draait [Snyk](../.github/workflows/snyk.yml) (SCA + SAST + CycloneDX SBOM) wanneer `SNYK_TOKEN` is geconfigureerd.
+
+[Dependabot](../.github/dependabot.yml) opent wekelijks PRs voor Maven-, GitHub Actions- en Docker-afhankelijkheden.
+
+---
+
+## Workflows
+
+| Workflow | Bestand | Trigger | Doel |
+|----------|---------|---------|------|
+| CI | `ci.yml` | `pull_request` | Validatie vóór merge |
+| Deploy OTAP | `deploy.yml` | `push` OTAP-branches | Build, test, deploy |
+| SBOM (SPDX) | `sbom.yml` | `push` OTAP-branches | GitHub dependency-graph SBOM |
+| Snyk | `snyk.yml` | `push` + `pull_request` | SAST/SCA + CycloneDX SBOM |
+
+---
 
 ## Acceptatie-omgeving
 
-De acceptatie-omgeving (`docker-compose.accept.yml`) is bedoeld als productie-achtige staging:
+[`docker-compose.accept.yml`](../docker-compose.accept.yml) is productie-achtige staging:
 
 - Geen debug-poort (in tegenstelling tot dev)
-- `restart: always` en geheugenlimiet van 2 GB (zoals productie)
-- Poort 8080 (productie gebruikt poort 80)
+- `restart: always` en geheugenlimiet 2 GB (zoals productie)
+- Poort 8080 (productie map naar poort 80)
+
+---
 
 ## GitHub-configuratie (handmatig)
 
-Maak in de repository **Settings → Environments** de omgeving `acceptatie` aan naast de bestaande `dev`, `test` en `prod`.
+### Environments
 
-Aanbevolen bescherming:
+Maak in **Settings → Environments** de omgeving `acceptatie` aan naast `dev`, `test` en `prod`.
 
-| Environment  | Aanbevolen instelling                          |
-|--------------|------------------------------------------------|
-| `dev`        | Geen goedkeuring vereist                       |
-| `test`       | Optioneel: 1 reviewer                          |
-| `acceptatie` | Vereiste reviewer(s) — UAT-goedkeuring         |
-| `prod`       | Vereiste reviewer(s) — productie-deploy        |
+| Environment | Aanbevolen instelling |
+|-------------|----------------------|
+| `dev` | Geen goedkeuring vereist |
+| `test` | Optioneel: 1 reviewer |
+| `acceptatie` | Vereiste reviewer(s) — UAT-goedkeuring; deployment branch `acceptatie` |
+| `prod` | Vereiste reviewer(s); deployment branch `main` |
 
 Gebruik per omgeving eigen secrets (`MYSQL_ROOT_PASSWORD`, `MYSQL_PASSWORD`) waar mogelijk.
 
-## Beperking: ephemeral runners
+### Branch protection
 
-Deploy-jobs draaien op GitHub-hosted runners (`ubuntu-latest`). Containers worden gestart tijdens de job en verdwijnen wanneer de job eindigt. Dit valideert het deployment-proces, maar er zijn geen persistente OTAP-servers.
+Onder **Settings → Branches** — vereiste checks per OTAP-branch:
 
-Voor echte gescheiden omgevingen zijn self-hosted runners of deploy naar externe hosts nodig (buiten scope van de huidige setup).
-
-## Gerelateerde workflows
-
-| Workflow | Trigger | Doel |
-|----------|---------|------|
-| [CI](../.github/workflows/ci.yml) | `pull_request` naar OTAP-branches | Build + unit tests vóór merge |
-| [Deploy OTAP](../.github/workflows/deploy.yml) | `push` naar OTAP-branches | Build, test, deploy per omgeving |
-| [SBOM](../.github/workflows/sbom.yml) | `push` naar OTAP-branches | SPDX SBOM via GitHub dependency graph |
-| [Snyk](../.github/workflows/snyk.yml) | `push` + `pull_request` | SAST/SCA en CycloneDX SBOM (vereist `SNYK_TOKEN` secret) |
-
-### Pull request-validatie
-
-Pull requests naar `development`, `pre-release`, `acceptatie` of `main` starten de **CI**-workflow:
-
-1. **Build** — controleert of het project compileert en het OMOD gebouwd kan worden.
-2. **Unit-test** — dezelfde testgate als bij deploy; merge kan geblokkeerd worden via branch protection.
-3. **Dependency review** — GitHub controleert of nieuwe dependencies bekende kwetsbaarheden introduceren.
-
-Snyk draait parallel op PRs (SCA + SAST) wanneer `SNYK_TOKEN` is geconfigureerd.
-
-### Dependabot
-
-[`.github/dependabot.yml`](../.github/dependabot.yml) opent wekelijks PRs voor Maven-, GitHub Actions- en Docker-afhankelijkheden.
-
-## GitHub branch protection (aanbevolen)
-
-Stel per OTAP-branch in onder **Settings → Branches**:
-
-| Branch | Vereiste checks |
-|--------|-----------------|
-| `development` | `build`, `unit-test` (CI workflow) |
+| Branch | Vereiste CI-checks |
+|--------|-------------------|
+| `development` | `build`, `unit-test` |
 | `pre-release` | `build`, `unit-test` |
 | `acceptatie` | `build`, `unit-test` |
 | `main` | `build`, `unit-test` |
 
 Optioneel ook `dependency-review` en Snyk als required checks.
 
-## Geplande verbeteringen
+---
+
+## Bekende beperkingen
+
+| Beperking | Impact | Status |
+|-----------|--------|--------|
+| Ephemeral GitHub-hosted runners | Geen persistente OTAP-servers; deploy valideert proces, niet productie-hosting | ⚠️ |
+| Dev-compose hardcoded wachtwoorden | `docker-compose.dev.yml` gebruikt `root` / `openmrs` i.p.v. secrets | ⚠️ |
+| Docker image `:latest` | OpenMRS-image niet gepind op digest — reproduceerbaarheid | ⚠️ |
+| SBOM los van build-run | SPDX- en CycloneDX-SBOM in aparte workflows | ⚠️ |
+| Legacy Travis CI | [`.travis.yml`](../.travis.yml) nog aanwezig naast GitHub Actions | ⚠️ |
+
+Voor echte gescheiden OTAP-hosting zijn self-hosted runners of deploy naar externe VMs nodig.
+
+---
+
+## Openstaande verbeteringen
 
 - SBOM koppelen aan build-artefact (één traceerbare build-run)
 - Docker image pinning in `docker-compose.yml`
 - Dev-compose secrets via environment variables
 - Concurrency-bescherming op deploy-jobs
 - Verwijderen van legacy `.travis.yml`
+
+Zie ook de security backlog in [`auditrapport/00-auditrapport.md`](auditrapport/00-auditrapport.md) (bijlage I, nog te maken).

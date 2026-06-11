@@ -35,7 +35,7 @@
 | 6 | UI-niveau toegangscontrole op patiëntformulieren | ✅ Aanwezig | `patientHtmlForms.jsp:3` — `<openmrs:hasPrivilege privilege="Form Entry">` |
 | 7 | Rolgebaseerde toegangscontrole op API-laag | ⚠️ Gedeeltelijk | Service-methoden in `HtmlFormEntryServiceImpl` bevatten geen `@Authorized`-annotaties; handhaving verloopt uitsluitend via de OpenMRS-kerninfrastructuur |
 | 8 | Beveiliging van REST/DWR-eindpunten | ⚠️ Gedeeltelijk | `config.xml:98-114` — DWR-methoden zijn geconfigureerd, maar er zijn geen expliciete privilege-guards op `DWRHtmlFormEntryService` zichtbaar buiten de sessiecontrole |
-| 9 | Documentatie toegangsbeheerbeleid | ❌ Afwezig | Geen `SECURITY.md`, geen overzicht van rechten/rollen in de repository |
+| 9 | Documentatie toegangsbeheerbeleid | ⚠️ Gedeeltelijk | [`docs/security.md`](../security.md) — vulnerability disclosure; geen privilege-matrix of OTAP-toegangsbeleid (zie [`otap.md`](../otap.md)) |
 
 ### Gebreken
 
@@ -43,7 +43,7 @@
   **Verbetering:** Voeg `@Authorized({PrivilegeConstants.MANAGE_FORMS})` toe aan schrijfmethoden in `HtmlFormEntryServiceImpl`.
 
 - **Gebrek:** Geen gedocumenteerd overzicht van welke rollen welke privileges vereisen.  
-  **Verbetering:** Maak een privilege-matrix op in `docs/` of in `config.xml` als commentaar.
+  **Verbetering:** Maak een privilege-matrix op in `docs/` of in `config.xml` als commentaar. OTAP- en pipeline-toegang is wel gedocumenteerd in [`otap.md`](../otap.md) en [`02-pipeline-compliance.md`](02-pipeline-compliance.md).
 
 ---
 
