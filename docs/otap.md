@@ -74,11 +74,44 @@ Voor echte gescheiden omgevingen zijn self-hosted runners of deploy naar externe
 
 ## Gerelateerde workflows
 
-- **Deploy OTAP** — [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml)
-- **SBOM** — [`.github/workflows/sbom.yml`](../.github/workflows/sbom.yml) (ook op `acceptatie`)
+| Workflow | Trigger | Doel |
+|----------|---------|------|
+| [CI](../.github/workflows/ci.yml) | `pull_request` naar OTAP-branches | Build + unit tests vóór merge |
+| [Deploy OTAP](../.github/workflows/deploy.yml) | `push` naar OTAP-branches | Build, test, deploy per omgeving |
+| [SBOM](../.github/workflows/sbom.yml) | `push` naar OTAP-branches | SPDX SBOM via GitHub dependency graph |
+| [Snyk](../.github/workflows/snyk.yml) | `push` + `pull_request` | SAST/SCA en CycloneDX SBOM (vereist `SNYK_TOKEN` secret) |
+
+### Pull request-validatie
+
+Pull requests naar `development`, `pre-release`, `acceptatie` of `main` starten de **CI**-workflow:
+
+1. **Build** — controleert of het project compileert en het OMOD gebouwd kan worden.
+2. **Unit-test** — dezelfde testgate als bij deploy; merge kan geblokkeerd worden via branch protection.
+3. **Dependency review** — GitHub controleert of nieuwe dependencies bekende kwetsbaarheden introduceren.
+
+Snyk draait parallel op PRs (SCA + SAST) wanneer `SNYK_TOKEN` is geconfigureerd.
+
+### Dependabot
+
+[`.github/dependabot.yml`](../.github/dependabot.yml) opent wekelijks PRs voor Maven-, GitHub Actions- en Docker-afhankelijkheden.
+
+## GitHub branch protection (aanbevolen)
+
+Stel per OTAP-branch in onder **Settings → Branches**:
+
+| Branch | Vereiste checks |
+|--------|-----------------|
+| `development` | `build`, `unit-test` (CI workflow) |
+| `pre-release` | `build`, `unit-test` |
+| `acceptatie` | `build`, `unit-test` |
+| `main` | `build`, `unit-test` |
+
+Optioneel ook `dependency-review` en Snyk als required checks.
 
 ## Geplande verbeteringen
 
-- PR-validatie workflow (`pull_request`)
-- SBOM koppelen aan build-artefact
-- Dependabot en dependency scanning
+- SBOM koppelen aan build-artefact (één traceerbare build-run)
+- Docker image pinning in `docker-compose.yml`
+- Dev-compose secrets via environment variables
+- Concurrency-bescherming op deploy-jobs
+- Verwijderen van legacy `.travis.yml`

@@ -2,9 +2,9 @@ name: Snyk SAST & SCA Scan
 
 on:
   push:
-    branches: [ main, development, pre-release ]
+    branches: [ main, development, pre-release, acceptatie ]
   pull_request:
-    branches: [ main, development, pre-release ]
+    branches: [ main, development, pre-release, acceptatie ]
   workflow_dispatch:
 
 jobs:
