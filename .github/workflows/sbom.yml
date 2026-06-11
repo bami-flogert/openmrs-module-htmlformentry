@@ -1,0 +1,32 @@
+name: Generate GitHub SBOM
+
+on:
+  push:
+    branches: [ main, development, pre-release ]
+
+jobs:
+  sbom:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create docs directory
+        run: mkdir -p docs
+
+      - name: Export GitHub SBOM
+        run: |
+          gh api /repos/${{ github.repository }}/dependency-graph/sbom \
+            --jq '.sbom' > docs/sbom.spdx.json
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Upload SBOM Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-artifact
+          path: docs/sbom.spdx.json
