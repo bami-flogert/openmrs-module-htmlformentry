@@ -23,10 +23,25 @@ development → pre-release → acceptatie → main
 
 Elke push naar een OTAP-branch triggert [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml):
 
-1. **Build** — Maven bouwt het OMOD-artefact (`mvn package`).
-2. **Deploy** — Alleen de job die bij de branch hoort, start Docker Compose met de juiste overlay.
+1. **Build** — Maven bouwt het OMOD-artefact (`mvn package -DskipTests`).
+2. **Unit-test** — Maven draait alle unit tests (`mvn test`). Deploy wordt geblokkeerd als tests falen.
+3. **Deploy** — Alleen de job die bij de branch hoort, start Docker Compose met de juiste overlay.
+4. **Smoke test** — Na deploy wordt gecontroleerd of OpenMRS bereikbaar is (`/openmrs` endpoint).
+5. **Tear down** — Containers worden gestopt (ephemeral runner).
+
+`build` en `unit-test` draaien parallel. Alle deploy-jobs hebben `needs: [build, unit-test]`.
 
 Hetzelfde gebouwde artefact wordt per run geüpload en gedownload in de deploy-job (immutable promotion binnen één workflow-run).
+
+### Quality gates
+
+| Gate            | Wanneer        | Actie bij falen                          |
+|-----------------|----------------|------------------------------------------|
+| Unit tests      | Vóór deploy    | Deploy-jobs starten niet                   |
+| Smoke test      | Na deploy      | Deploy-job faalt; geen succesvolle release |
+| JaCoCo rapport  | Na unit tests  | Geüpload als artifact (audit/evidence)     |
+
+Het smoke-test script staat in [`.github/scripts/smoke-test.sh`](../.github/scripts/smoke-test.sh). Productie gebruikt poort 80; overige omgevingen poort 8080.
 
 ## Acceptatie-omgeving
 
@@ -64,8 +79,6 @@ Voor echte gescheiden omgevingen zijn self-hosted runners of deploy naar externe
 
 ## Geplande verbeteringen
 
-- Unit tests als quality gate vóór deploy
 - PR-validatie workflow (`pull_request`)
 - SBOM koppelen aan build-artefact
-- Post-deploy smoke checks
 - Dependabot en dependency scanning
