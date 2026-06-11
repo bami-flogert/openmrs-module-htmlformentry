@@ -1,6 +1,6 @@
 services:
   db:
-    image: mysql:5.6
+    image: mysql:5.6.51
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: openmrs
@@ -14,7 +14,7 @@ services:
       retries: 5
 
   openmrs:
-    image: openmrs/openmrs-reference-application-distro:latest
+    image: openmrs/openmrs-reference-application-distro:2.12.2
     depends_on:
       db:
         condition: service_healthy

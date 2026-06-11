@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/openmrs/openmrs-module-htmlformentry.svg?branch=master)](https://travis-ci.org/openmrs/openmrs-module-htmlformentry)
+[![Deploy OTAP](https://github.com/bami-flogert/openmrs-module-htmlformentry/actions/workflows/deploy.yml/badge.svg)](https://github.com/bami-flogert/openmrs-module-htmlformentry/actions/workflows/deploy.yml)
 
 HTML Form Entry
 =========

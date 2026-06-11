@@ -122,31 +122,64 @@ Parallel draait [Snyk](../.github/workflows/snyk.yml) (SCA + SAST + CycloneDX SB
 
 ## GitHub-configuratie (handmatig)
 
-### Environments
+De pipeline-code staat in de repository; onderstaande stappen configureer je in GitHub zelf.
 
-Maak in **Settings → Environments** de omgeving `acceptatie` aan naast `dev`, `test` en `prod`.
+### Checklist Environments
 
-| Environment | Aanbevolen instelling |
-|-------------|----------------------|
-| `dev` | Geen goedkeuring vereist |
-| `test` | Optioneel: 1 reviewer |
-| `acceptatie` | Vereiste reviewer(s) — UAT-goedkeuring; deployment branch `acceptatie` |
-| `prod` | Vereiste reviewer(s); deployment branch `main` |
+**Settings → Environments**
 
-Gebruik per omgeving eigen secrets (`MYSQL_ROOT_PASSWORD`, `MYSQL_PASSWORD`) waar mogelijk.
+| Environment | Deployment branches | Required reviewers | Secrets |
+|-------------|---------------------|-------------------|---------|
+| `dev` | `development` | Geen | `MYSQL_ROOT_PASSWORD`, `MYSQL_PASSWORD` |
+| `test` | `pre-release` | Optioneel: 1 | Zelfde namen, andere waarden |
+| `acceptatie` | `acceptatie` | **Ja** (UAT) | Zelfde namen, andere waarden |
+| `prod` | `main` | **Ja** | Zelfde namen, productie-waarden |
 
-### Branch protection
+Optioneel: `SNYK_TOKEN` als repository secret voor [`snyk.yml`](../.github/workflows/snyk.yml).
 
-Onder **Settings → Branches** — vereiste checks per OTAP-branch:
+### Checklist branch protection
 
-| Branch | Vereiste CI-checks |
-|--------|-------------------|
+**Settings → Branches → Add rule** (per OTAP-branch)
+
+- [ ] Require a pull request before merging
+- [ ] Require status checks: `build`, `unit-test` (workflow **CI**)
+- [ ] Optioneel: `dependency-review`, Snyk-job
+- [ ] Restrict pushes die de promotieketen overslaan (bijv. geen directe push `development` → `main`)
+
+| Branch | Minimale required checks |
+|--------|-------------------------|
 | `development` | `build`, `unit-test` |
 | `pre-release` | `build`, `unit-test` |
 | `acceptatie` | `build`, `unit-test` |
 | `main` | `build`, `unit-test` |
 
-Optioneel ook `dependency-review` en Snyk als required checks.
+### Lokaal draaien (development)
+
+Kopieer [`.env.example`](../.env.example) naar `.env` en vul wachtwoorden in. Start daarna:
+
+```bash
+mvn package -DskipTests
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+```
+
+---
+
+## Reproduceerbare images
+
+[`docker-compose.yml`](../docker-compose.yml) gebruikt gepinde image-tags (geen `:latest`):
+
+| Service | Image |
+|---------|-------|
+| MySQL | `mysql:5.6.51` |
+| OpenMRS | `openmrs/openmrs-reference-application-distro:2.12.2` |
+
+Dependabot (`package-ecosystem: docker`) opent PRs bij nieuwere image-versies.
+
+---
+
+## Concurrency
+
+[`deploy.yml`](../.github/workflows/deploy.yml) gebruikt `concurrency: group: otap-${{ github.ref }}` met `cancel-in-progress: true`. Overlappende deploys op dezelfde branch annuleren de vorige run.
 
 ---
 
@@ -155,20 +188,10 @@ Optioneel ook `dependency-review` en Snyk als required checks.
 | Beperking | Impact | Status |
 |-----------|--------|--------|
 | Ephemeral GitHub-hosted runners | Geen persistente OTAP-servers; deploy valideert proces, niet productie-hosting | ⚠️ |
-| Dev-compose hardcoded wachtwoorden | `docker-compose.dev.yml` gebruikt `root` / `openmrs` i.p.v. secrets | ⚠️ |
-| Docker image `:latest` | OpenMRS-image niet gepind op digest — reproduceerbaarheid | ⚠️ |
 | CycloneDX SBOM alleen via Snyk | SPDX zit in deploy-bundle; CycloneDX apart in `snyk.yml` | ⚠️ |
-| Legacy Travis CI | [`.travis.yml`](../.travis.yml) nog aanwezig naast GitHub Actions | ⚠️ |
+| Snyk niet als harde gate | `continue-on-error: true` in `snyk.yml` | ⚠️ |
+| GitHub UI niet afgedwongen in code | Environment reviewers en branch protection vereisen handmatige repo-instellingen | ⚠️ |
 
 Voor echte gescheiden OTAP-hosting zijn self-hosted runners of deploy naar externe VMs nodig.
 
----
-
-## Openstaande verbeteringen
-
-- Docker image pinning in `docker-compose.yml`
-- Dev-compose secrets via environment variables
-- Concurrency-bescherming op deploy-jobs
-- Verwijderen van legacy `.travis.yml`
-
-Zie ook de security backlog in [`auditrapport/00-auditrapport.md`](auditrapport/00-auditrapport.md) (bijlage I, nog te maken).
+Module-specifieke security-hiaten staan in [`auditrapport/01-gap-analyse.md`](auditrapport/01-gap-analyse.md). De security backlog (bijlage I) in [`auditrapport/00-auditrapport.md`](auditrapport/00-auditrapport.md) is nog te finaliseren.

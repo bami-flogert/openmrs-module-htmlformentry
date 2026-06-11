@@ -1,14 +1,14 @@
 services:
   db:
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_PASSWORD: openmrs
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
       - "3306:3306"
 
   openmrs:
     environment:
-      DB_PASSWORD: openmrs
+      DB_PASSWORD: ${MYSQL_PASSWORD}
       OMRS_DEV_DEBUG_PORT: 1044
     ports:
       - "8080:8080"

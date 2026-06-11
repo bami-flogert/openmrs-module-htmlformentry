@@ -8,6 +8,10 @@ on:
       - acceptatie
       - main
 
+concurrency:
+  group: otap-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
