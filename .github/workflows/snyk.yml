@@ -33,7 +33,6 @@ jobs:
         uses: snyk/actions/setup@9adf32b1121593767fc3c057af55b55db032dc04
 
       - name: Snyk test (SCA)
-        if: ${{ secrets.SNYK_TOKEN != '' }}
         run: snyk test --all-projects --json-file-output=snyk-results.json
         continue-on-error: true
         env:
