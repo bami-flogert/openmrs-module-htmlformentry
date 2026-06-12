@@ -237,8 +237,8 @@
 					<version>2.11</version>
 					<configuration>
 						<failIfNoTests>false</failIfNoTests>
-						<forkMode>never</forkMode>
-						<argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+						<forkMode>once</forkMode>
+						<argLine>${surefireArgLine} -Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
 					</configuration>
 				</plugin>
 				<plugin>
@@ -281,6 +281,9 @@
 							<goals>
 								<goal>prepare-agent</goal>
 							</goals>
+							<configuration>
+								<propertyName>surefireArgLine</propertyName>
+							</configuration>
 						</execution>
 						<execution>
 							<id>report</id>
