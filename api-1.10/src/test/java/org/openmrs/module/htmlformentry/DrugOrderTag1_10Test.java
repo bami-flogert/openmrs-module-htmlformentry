@@ -8,18 +8,21 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
-import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.test.annotation.DirtiesContext;
 import org.openmrs.Drug;
 import org.openmrs.Encounter;
 import org.openmrs.Order;
@@ -29,6 +32,7 @@ import org.openmrs.test.BaseModuleContextSensitiveTest;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 
+@DirtiesContext
 public class DrugOrderTag1_10Test extends BaseModuleContextSensitiveTest {
 	
 protected final Log log = LogFactory.getLog(getClass());
@@ -41,12 +45,13 @@ protected final Log log = LogFactory.getLog(getClass());
     public void setupDatabase() throws Exception {
 		executeDataSet(XML_DATASET_PATH + new TestUtil().getTestDatasetFilename(XML_REGRESSION_TEST_DATASET));
 		executeDataSet(XML_DATASET_PATH + new TestUtil().getTestDatasetFilename(XML_DRUG_ORDER_ELEMENT_DATASET));
+		executeDataSet("otherConceptMappings.xml");
     }
 	
 	@Test
 	public void testDrugOrderTag_shouldCreateAndDiscontinueDrugOrder() throws Exception {		
 		final RegressionTestHelper createAndEditEncounterTest = new RegressionTestHelper() {
-			final Date date = new Date();
+			final Date date = fixedTestDate("2012-03-01");
 			
 			private Encounter encounter;
 			
@@ -154,7 +159,6 @@ protected final Log log = LogFactory.getLog(getClass());
 					));
 			}
 		};
-        executeDataSet("otherConceptMappings.xml");
 		createAndEditEncounterTest.run();
 		
 		//Test viewing edited drug order
@@ -178,7 +182,7 @@ protected final Log log = LogFactory.getLog(getClass());
 	@Test
 	public void testDrugOrderTag_shouldCreateAndEditDrugOrder() throws Exception {		
 		final RegressionTestHelper createAndEditEncounterTest = new RegressionTestHelper() {
-			final Date date = new Date();
+			final Date date = fixedTestDate("2012-03-01");
 			
 			private Encounter encounter;
 			
@@ -281,7 +285,6 @@ protected final Log log = LogFactory.getLog(getClass());
 					));
 			}
 		};
-        executeDataSet("otherConceptMappings.xml");
 		createAndEditEncounterTest.run();
 		
         //Test viewing edited drug order
@@ -305,11 +308,11 @@ protected final Log log = LogFactory.getLog(getClass());
 	@Test
 	public void testDrugOrderTag_shouldEditDiscontinueDrugOrder() throws Exception {		
 		final RegressionTestHelper createAndEditEncounterTest = new RegressionTestHelper() {
-			final Date date = DateUtils.addDays(new Date(), -4);
+			final Date date = fixedTestDate("2012-03-01");
 			
-			final Date discontinueDate = DateUtils.addDays(new Date(), -2);
+			final Date discontinueDate = fixedTestDate("2012-03-03");
 			
-			final Date newDiscontinueDate = DateUtils.addDays(new Date(), -3);
+			final Date newDiscontinueDate = fixedTestDate("2012-03-02");
 			
 			private Encounter encounter;
 			
@@ -451,4 +454,15 @@ protected final Log log = LogFactory.getLog(getClass());
 	    });
 	    return orders;
     }
+
+	private static Date fixedTestDate(String yyyyMmDd) {
+		try {
+			SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+			format.setTimeZone(TimeZone.getTimeZone("America/New_York"));
+			return format.parse(yyyyMmDd);
+		}
+		catch (ParseException ex) {
+			throw new RuntimeException(ex);
+		}
+	}
 }

@@ -12,6 +12,9 @@ permissions:
   contents: read
   pull-requests: read
 
+env:
+  TZ: America/New_York
+
 jobs:
   build:
     runs-on: ubuntu-latest

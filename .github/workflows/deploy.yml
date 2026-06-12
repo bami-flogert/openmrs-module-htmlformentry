@@ -12,6 +12,9 @@ concurrency:
   group: otap-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  TZ: America/New_York
+
 permissions:
   contents: read
 
