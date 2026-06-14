@@ -95,22 +95,13 @@ public class HtmlFormEntryController {
 
     	long ts = System.currentTimeMillis();
 
-        Mode mode = Mode.VIEW;
-    	
+        Mode mode = resolveMode(request);
+
     	Integer personId = null;
-    	
+
     	if (StringUtils.hasText(request.getParameter("personId"))) {
     		personId = Integer.valueOf(request.getParameter("personId"));
     	}
-    	
-    	
-    	String modeParam = request.getParameter("mode");
-		if ("enter".equalsIgnoreCase(modeParam)) {
-			mode = Mode.ENTER;
-		}
-		else if ("edit".equalsIgnoreCase(modeParam)) {
-            mode = Mode.EDIT;            
-		}
 
         Patient patient = null;
     	Encounter encounter = null;
@@ -132,17 +123,7 @@ public class HtmlFormEntryController {
     		patientId = patient.getPatientId();
             personId = patient.getPersonId();
             
-            if (formId != null) { // I think formId is allowed to differ from encounter.form.id because of HtmlFormFlowsheet
-                form = Context.getFormService().getForm(formId);
-                htmlForm = HtmlFormEntryUtil.getService().getHtmlFormByForm(form);
-                if (htmlForm == null)
-            		throw new IllegalArgumentException("No HtmlForm associated with formId " + formId);
-            } else {
-            	form = encounter.getForm();
-                htmlForm = HtmlFormEntryUtil.getService().getHtmlFormByForm(encounter.getForm());
-                if (htmlForm == null)
-            		throw new IllegalArgumentException("The form for the specified encounter (" + encounter.getForm() + ") does not have an HtmlForm associated with it");
-            }
+            htmlForm = resolveHtmlFormForEncounter(formId, encounter);
 
     	} else { // no encounter specified
 
@@ -223,7 +204,56 @@ public class HtmlFormEntryController {
         
         return session;
     }
-    
+
+    /**
+     * Determines the form-entry mode based on the "mode" request parameter.
+     * Defaults to {@link Mode#VIEW} when the parameter is missing or unrecognized.
+     *
+     * @param request the incoming request
+     * @return the resolved {@link Mode}
+     */
+    Mode resolveMode(HttpServletRequest request) {
+        String modeParam = request.getParameter("mode");
+        if ("enter".equalsIgnoreCase(modeParam)) {
+            return Mode.ENTER;
+        }
+        else if ("edit".equalsIgnoreCase(modeParam)) {
+            return Mode.EDIT;
+        }
+        return Mode.VIEW;
+    }
+
+    /**
+     * Determines the {@link HtmlForm} to use for a form-entry session that is based on an
+     * existing encounter.
+     * <p/>
+     * If formId is specified, looks up the HtmlForm associated with that form (this is
+     * allowed to differ from the encounter's own form, e.g. for HtmlFormFlowsheet).
+     * Otherwise falls back to the HtmlForm associated with the encounter's own form.
+     *
+     * @param formId optional form id that overrides the encounter's own form
+     * @param encounter the encounter the session is based on
+     * @return the resolved {@link HtmlForm}
+     * @throws IllegalArgumentException if no matching HtmlForm can be found
+     */
+    HtmlForm resolveHtmlFormForEncounter(Integer formId, Encounter encounter) {
+        HtmlForm htmlForm;
+        if (formId != null) {
+            Form form = Context.getFormService().getForm(formId);
+            htmlForm = HtmlFormEntryUtil.getService().getHtmlFormByForm(form);
+            if (htmlForm == null) {
+                throw new IllegalArgumentException("No HtmlForm associated with formId " + formId);
+            }
+        }
+        else {
+            htmlForm = HtmlFormEntryUtil.getService().getHtmlFormByForm(encounter.getForm());
+            if (htmlForm == null) {
+                throw new IllegalArgumentException("The form for the specified encounter (" + encounter.getForm() + ") does not have an HtmlForm associated with it");
+            }
+        }
+        return htmlForm;
+    }
+
     /**
 	 * Get a piece of information for the currently authenticated user. This information is stored
 	 * only temporarily. When a new module is loaded or the server is restarted, this information
