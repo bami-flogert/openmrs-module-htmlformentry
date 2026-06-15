@@ -8,4 +8,4 @@
 | PoC-refactor (Extract Class) | — | ⬜ TODO |
 | SonarCloud CI / quality gate | [`sonarcloud-setup.md`](../sonarcloud-setup.md) | ✅ workflow aanwezig |
 
-Volledige kritische reflectie op tooling (SonarCloud + AI) volgt na PoC-validatie in [`07-validatie-voor-na.md`](07-validatie-voor-na.md).
+Volledige kritische reflectie op tooling (SonarCloud + AI) volgt na PoC-validatie in [`07-validatie-voor-na.md`](../07-validatie-voor-na.md).
