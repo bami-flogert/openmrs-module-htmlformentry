@@ -24,6 +24,8 @@ updates:
       - dependency-name: org.openmrs.api:*
       - dependency-name: org.openmrs.web:*
       - dependency-name: org.openmrs.test:*
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: github-actions
     directory: /
@@ -34,9 +36,13 @@ updates:
       all-dependencies:
         patterns:
           - '*'
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: docker
     directory: /
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
