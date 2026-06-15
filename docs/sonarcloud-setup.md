@@ -57,7 +57,9 @@ New Code policy (minimum):
 
 - Required status check: **SonarCloud Analysis**
 
-**Let op:** Zonder `SONAR_TOKEN` faalt de Maven-job met `localhost:9000` of auth-fout. De aparte GitHub App-check "SonarCloud Code Analysis" is niet hetzelfde als deze workflow-job.
+**Let op:** Zonder `SONAR_TOKEN` faalt de Maven-job met auth-fout. De aparte GitHub App-check "SonarCloud Code Analysis" is niet hetzelfde als deze workflow-job.
+
+De Sonar-scan draait op **JDK 17** (scanner-vereiste); build en tests blijven op **JDK 8** (OpenMRS-module).
 
 ## Checklist
 
