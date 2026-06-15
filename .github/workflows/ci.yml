@@ -101,7 +101,10 @@ jobs:
               -Dsonar.pullrequest.branch=${{ github.head_ref }} \
               -Dsonar.pullrequest.base=${{ github.base_ref }}"
           fi
-          mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+          mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:3.11.0.3922:sonar \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.organization=bami-flogert \
+            -Dsonar.projectKey=bami-flogert_openmrs-module-htmlformentry \
             -Dsonar.qualitygate.wait=true \
             $PR_ARGS \
             --file pom.xml

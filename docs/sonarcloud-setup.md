@@ -57,6 +57,8 @@ New Code policy (minimum):
 
 - Required status check: **SonarCloud Analysis**
 
+**Let op:** Zonder `SONAR_TOKEN` faalt de Maven-job met `localhost:9000` of auth-fout. De aparte GitHub App-check "SonarCloud Code Analysis" is niet hetzelfde als deze workflow-job.
+
 ## Checklist
 
 - [ ] Organization en project key gecontroleerd
