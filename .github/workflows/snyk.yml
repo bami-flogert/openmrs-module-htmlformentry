@@ -52,6 +52,24 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
+      # SCA op Docker-images uit docker-compose.yml
+      - name: Snyk container test
+        run: |
+          snyk container test mysql:5.6.51 --json-file-output=snyk-container-mysql.json || true
+          snyk container test openmrs/openmrs-reference-application-distro:2.12.2 \
+            --json-file-output=snyk-container-openmrs.json || true
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      # Geprioriteerd patchadvies voor auditrapport (SBOM + CVE/CVSS)
+      - name: Generate patch advice
+        run: |
+          python3 .github/scripts/generate-patch-advice.py \
+            --maven snyk-results.json \
+            --docker snyk-container-mysql.json snyk-container-openmrs.json \
+            --output docs/auditrapport/07-patchadvies.md
+
       # Ruwe output opslaan als artifact (bewijs voor het auditrapport)
       - name: Upload Snyk results
         uses: actions/upload-artifact@v4
@@ -61,3 +79,6 @@ jobs:
             snyk-results.json
             snyk-code-results.json
             snyk-sbom.json
+            snyk-container-mysql.json
+            snyk-container-openmrs.json
+            docs/auditrapport/07-patchadvies.md

@@ -67,6 +67,7 @@
 - CycloneDX SBOM via [`snyk.yml`](../../.github/workflows/snyk.yml) (`snyk sbom`)
 - Dependabot voor Maven, GitHub Actions en Docker ([`dependabot.yml`](../../.github/dependabot.yml))
 - Dependency review op pull requests ([`ci.yml`](../../.github/workflows/ci.yml))
+- Geprioriteerd patchadvies op basis van SBOM + CVE/CVSS ([`07-patchadvies.md`](07-patchadvies.md), gegenereerd via [`generate-patch-advice.py`](../../.github/scripts/generate-patch-advice.py))
 
 Zie ook bijlage B ([`02-pipeline-compliance.md`](02-pipeline-compliance.md)) en het OTAP-overzicht ([`../otap.md`](../otap.md)).
 
@@ -74,7 +75,7 @@ Zie ook bijlage B ([`02-pipeline-compliance.md`](02-pipeline-compliance.md)) en 
 
 ## 6. Conclusie & Advies
 
-> _In te vullen._ Eindoordeel + geprioriteerd advies. Verwijst door naar de security backlog (bijlage I).
+> _In te vullen._ Eindoordeel + geprioriteerd advies. Verwijst door naar het patchadvies (bijlage J) en de security backlog (bijlage I).
 
 ---
 
@@ -92,6 +93,7 @@ Zie ook bijlage B ([`02-pipeline-compliance.md`](02-pipeline-compliance.md)) en 
 | G | Bow-tie / threat model | _nog te maken_ | Te doen |
 | H | CRA-mapping | _nog te maken_ | Te doen |
 | I | Security backlog / verbeteraanpak | _nog te maken_ | Te doen |
+| J | Patchadvies (SBOM/CVE) | [`07-patchadvies.md`](07-patchadvies.md) | Aanwezig — gegenereerd via Snyk + [`generate-patch-advice.py`](../../.github/scripts/generate-patch-advice.py) |
 
 ---
 

@@ -94,7 +94,7 @@ Trigger: `pull_request` naar `development`, `pre-release`, `acceptatie` of `main
 | `unit-test` | Zelfde testgate als deploy-pipeline |
 | `dependency-review` | Controle op kwetsbare nieuwe dependencies |
 
-Parallel draait [Snyk](../.github/workflows/snyk.yml) (SCA + SAST + CycloneDX SBOM) wanneer `SNYK_TOKEN` is geconfigureerd.
+Parallel draait [Snyk](../.github/workflows/snyk.yml) (SCA + SAST + CycloneDX SBOM + patchadvies) wanneer `SNYK_TOKEN` is geconfigureerd. Het rapport [`auditrapport/07-patchadvies.md`](auditrapport/07-patchadvies.md) wordt in die workflow gegenereerd en opgeslagen in het `snyk-results` artifact.
 
 [Dependabot](../.github/dependabot.yml) opent wekelijks PRs voor Maven-, GitHub Actions- en Docker-afhankelijkheden.
 
@@ -106,7 +106,7 @@ Parallel draait [Snyk](../.github/workflows/snyk.yml) (SCA + SAST + CycloneDX SB
 |----------|---------|---------|------|
 | CI | `ci.yml` | `pull_request` | Validatie vóór merge |
 | Deploy OTAP | `deploy.yml` | `push` OTAP-branches | Build, SBOM, test, bundle, deploy, prod release |
-| Snyk | `snyk.yml` | `push` + `pull_request` | SAST/SCA + CycloneDX SBOM (aanvullend op SPDX in deploy) |
+| Snyk | `snyk.yml` | `push` + `pull_request` | SAST/SCA + CycloneDX SBOM + patchadvies (`07-patchadvies.md`) |
 
 ---
 
