@@ -110,12 +110,7 @@ jobs:
               -Dsonar.pullrequest.branch=${{ github.head_ref }} \
               -Dsonar.pullrequest.base=${{ github.base_ref }}"
           fi
-          mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.organization=bami-flogert \
-            -Dsonar.projectKey=bami-flogert_openmrs-module-htmlformentry \
-            -Dsonar.coverage.jacoco.xmlReportPaths=omod/target/site/jacoco/jacoco.xml \
-            -Dsonar.exclusions=.github/**,**/target/**,**/*.min.js \
+          mvn -B sonar:sonar \
             -Dsonar.qualitygate.wait=true \
             $PR_ARGS \
             --file pom.xml

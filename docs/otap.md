@@ -100,6 +100,8 @@ Trigger: `pull_request` naar `development`, `pre-release`, `acceptatie` of `main
 
 Setup en secrets: [`sonarcloud-setup.md`](sonarcloud-setup.md).
 
+De `sonarcloud`-job draait op alle PR’s (ook uit forks). GitHub kan een `if`-guard voorstellen om Sonar op fork-PR’s over te slaan (`SONAR_TOKEN` + onvertrouwde code). Dat is **bewust niet** geïmplementeerd — zie [Bekende beperkingen](#bekende-beperkingen).
+
 Parallel draait [Snyk](../.github/workflows/snyk.yml) (SCA + SAST + CycloneDX SBOM + patchadvies) wanneer `SNYK_TOKEN` is geconfigureerd. Het rapport [`auditrapport/07-patchadvies.md`](auditrapport/07-patchadvies.md) wordt in die workflow gegenereerd en opgeslagen in het `snyk-results` artifact.
 
 [Dependabot](../.github/dependabot.yml) opent wekelijks PRs voor Maven-, GitHub Actions- en Docker-afhankelijkheden.
@@ -200,8 +202,23 @@ Dependabot (`package-ecosystem: docker`) opent PRs bij nieuwere image-versies.
 | Snyk niet als harde gate | `continue-on-error: true` in `snyk.yml` | ⚠️ |
 | Snyk skipped zonder token | Geen scan op forks of zonder `SNYK_TOKEN` | ✅ |
 | SonarCloud in CI | `sonarcloud`-job in `ci.yml` met `sonar.qualitygate.wait=true`; free plan: default Sonar way quality gate | ✅ |
+| SonarCloud op fork-PR’s | Job draait wél; GitHub suggereert `if: github.event.pull_request.head.repo.fork == false` om `SONAR_TOKEN` op onvertrouwde code te vermijden | ⚠️ Bewust niet geïmplementeerd (alleen interne PR’s) |
 | GitHub UI niet afgedwongen in code | Environment reviewers en branch protection vereisen handmatige repo-instellingen | ⚠️ |
 
 Voor echte gescheiden OTAP-hosting zijn self-hosted runners of deploy naar externe VMs nodig.
+
+### SonarCloud en fork-PR’s (bewuste keuze)
+
+GitHub Actions kan op de `sonarcloud`-job een `if`-conditie zetten zodat SonarCloud niet draait op pull requests uit forks:
+
+```yaml
+if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false }}
+```
+
+**Huidige stand:** niet geïmplementeerd — SonarCloud draait op alle PR’s naar `development`, `pre-release`, `acceptatie` en `main`.
+
+**Motivatie:** in dit project komen PR’s uit dezelfde repository; fork-PR’s zijn niet verwacht.
+
+**Follow-up:** bij externe contributors de `if`-guard toevoegen aan `.github/workflows/ci.yml` (job `sonarcloud`).
 
 Module-specifieke security-hiaten staan in [`auditrapport/01-gap-analyse.md`](auditrapport/01-gap-analyse.md). De security backlog (bijlage I) in [`auditrapport/00-auditrapport.md`](auditrapport/00-auditrapport.md) is nog te finaliseren.
