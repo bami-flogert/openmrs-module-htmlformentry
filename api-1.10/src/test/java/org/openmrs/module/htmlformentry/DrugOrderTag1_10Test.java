@@ -169,10 +169,12 @@ protected final Log log = LogFactory.getLog(getClass());
 				return "drugOrderTestForm";
 			}
 			
+			@Override
 			public Encounter getEncounterToView() {
 				return createAndEditEncounterTest.getEncounterToEdit();
 			}
 			
+			@Override
 			public void testViewingEncounter(Encounter encounter, String html) {
 				assertThat(html, containsString("DrugOrder.dose <span class=\"value\">2</span>"));
 			}
@@ -295,10 +297,12 @@ protected final Log log = LogFactory.getLog(getClass());
 				return "drugOrderTestForm";
 			}
 			
+			@Override
 			public Encounter getEncounterToView() {
 				return createAndEditEncounterTest.getEncounterToEdit();
 			}
 			
+			@Override
 			public void testViewingEncounter(Encounter encounter, String html) {
 				assertThat(html, containsString("DrugOrder.dose <span class=\"value\">2</span>"));
 			}
@@ -434,10 +438,12 @@ protected final Log log = LogFactory.getLog(getClass());
 				return "drugOrderTestForm";
 			}
 			
+			@Override
 			public Encounter getEncounterToView() {
 				return createAndEditEncounterTest.getEncounterToEdit();
 			}
 			
+			@Override
 			public void testViewingEncounter(Encounter encounter, String html) {
 				assertThat(html, containsString("DrugOrder.dose <span class=\"value\">1</span>"));
 			}
