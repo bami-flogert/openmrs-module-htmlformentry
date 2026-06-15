@@ -23,6 +23,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Set up JDK 8
         uses: actions/setup-java@v4
@@ -38,6 +40,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Set up JDK 8
         uses: actions/setup-java@v4
@@ -68,6 +72,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       # continue-on-error: baseline has open findings; remove after remediation (see docs/zizmor.md)
       - name: Run zizmor
@@ -87,6 +93,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up JDK 8
         uses: actions/setup-java@v4
@@ -117,12 +124,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_BRANCH: ${{ github.head_ref }}
+          PR_BASE: ${{ github.base_ref }}
         run: |
           PR_ARGS=""
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            PR_ARGS="-Dsonar.pullrequest.key=${{ github.event.pull_request.number }} \
-              -Dsonar.pullrequest.branch=${{ github.head_ref }} \
-              -Dsonar.pullrequest.base=${{ github.base_ref }}"
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            PR_ARGS="-Dsonar.pullrequest.key=${PR_NUMBER} \
+              -Dsonar.pullrequest.branch=${PR_BRANCH} \
+              -Dsonar.pullrequest.base=${PR_BASE}"
           fi
           mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             -Dsonar.host.url=https://sonarcloud.io \

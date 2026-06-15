@@ -112,26 +112,31 @@ Exitcode: `0` = geen bevindingen boven drempel, `14` = bevindingen gevonden (nor
 
 ---
 
-## Resultaat (baseline 2026-06-15)
+## Resultaat
+
+### Baseline (2026-06-15)
+
+Eerste scan: 58 zichtbare bevindingen — 43 high, 15 medium.
+
+### Na remediatie (2026-06-15)
 
 Uitvoering: `zizmor .` (v1.25.2), vanaf repository-root.
 
-**Samenvatting:** 58 zichtbare bevindingen — 43 high, 15 medium (plus 33 onderdrukte regels in de standaard persona).
+**Samenvatting:** 40 open bevindingen — 40 high (plus onderdrukte regels in de standaard persona).
 
-| Audit-regel | Ernst | Aantal | Korte uitleg |
-|-------------|-------|--------|--------------|
-| `unpinned-uses` | error (high) | 35 | Actions gebruiken `@v4`-tags i.p.v. immutable commit-SHA |
-| `artipacked` | warning (medium) | 12 | `actions/checkout` zonder `persist-credentials: false` |
-| `template-injection` | error (high) | 4 | `${{ github.head_ref }}` / `base_ref` in Sonar `run:`-blok (`ci.yml`) |
-| `cache-poisoning` | error (high) | 4 | Maven-cache op workflows die runtime-artefacten publiceren |
-| `dependabot-cooldown` | warning (medium) | 3 | Geen cooldown in [`dependabot.yml`](../.github/dependabot.yml) |
+| Audit-regel | Ernst | Was | Nu | Status |
+|-------------|-------|-----|-----|--------|
+| `template-injection` | error (high) | 4 | 0 | ✅ Opgelost — PR-variabelen via `env:` (`ci.yml`); provenance JSON via `env:` (`deploy.yml`) |
+| `artipacked` | warning (medium) | 12 | 0 | ✅ Opgelost — `persist-credentials: false` op alle `actions/checkout`-stappen |
+| `dependabot-cooldown` | warning (medium) | 3 | 0 | ✅ Opgelost — `cooldown.default-days: 7` in [`dependabot.yml`](../.github/dependabot.yml) |
+| `unpinned-uses` | error (high) | 35 | 36 | Open — SHA-pinnen van alle actions (grote wijziging; Dependabot houdt tags actueel) |
+| `cache-poisoning` | error (high) | 4 | 4 | Open — Maven-cache op publish-workflows; lage confidence, structurele wijziging nodig |
 
-Per bestand:
+Per bestand (open):
 
-- **`ci.yml`** — template-injection (Sonar PR-parameters), unpinned actions, artipacked, cache-poisoning
-- **`deploy.yml`** — unpinned actions, artipacked, cache-poisoning
-- **`snyk.yml`** — unpinned actions, artipacked, cache-poisoning
-- **`dependabot.yml`** — cooldown ontbreekt voor maven, github-actions en docker
+- **`ci.yml`** — unpinned actions, cache-poisoning
+- **`deploy.yml`** — unpinned actions, cache-poisoning
+- **`snyk.yml`** — unpinned actions, cache-poisoning
 
 ### Voorbeeld (template-injection)
 
@@ -172,8 +177,10 @@ Gebruik ignores spaarzaam en noteer de reden (audittrail, control 8.8).
 | Stap | Status |
 |------|--------|
 | Baseline vastleggen (`zizmor .` lokaal) | ✅ Dit document |
-| CI-job in [`ci.yml`](../.github/workflows/ci.yml) (`zizmor`-job) | ✅ Aanwezig — `continue-on-error: true` tot bevindingen zijn opgelost |
-| Hoog-risico bevindingen beoordelen (`template-injection`, `unpinned-uses`) | Open — daarna `continue-on-error` verwijderen |
+| CI-job in [`ci.yml`](../.github/workflows/ci.yml) (`zizmor`-job) | ✅ Aanwezig — `continue-on-error: true` tot `unpinned-uses` / `cache-poisoning` zijn opgelost |
+| Eenvoudige remediatie (`template-injection`, `artipacked`, `dependabot-cooldown`) | ✅ Opgelost (2026-06-15) |
+| SHA-pinnen actions (`unpinned-uses`, 36×) | Open — aparte PR |
+| Cache-poisoning (Maven-cache op publish-workflows) | Open — beoordelen of accepteren |
 | Optioneel: SARIF upload (`advanced-security: true`) | Niet geïmplementeerd |
 
 Voor CI-integratie en drempels: zie [zizmor quickstart](https://docs.zizmor.sh/quickstart/) en [usage](https://docs.zizmor.sh/usage/).
