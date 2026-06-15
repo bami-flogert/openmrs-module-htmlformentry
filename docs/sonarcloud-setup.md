@@ -43,6 +43,18 @@ Wijkt de project key in SonarCloud af? Pas `sonar-project.properties` aan vóór
 
 Zonder stap 4 faalt CI met: *"You are running CI analysis while Automatic Analysis is enabled"*.
 
+## A4b. Quality Gate FAILED in CI
+
+Als de scan wel draait maar Maven eindigt met *QUALITY GATE STATUS: FAILED*, werkt `sonar.qualitygate.wait=true` zoals bedoeld (NFR-M5).
+
+1. Open de link in de CI-log, bijvoorbeeld:  
+   `https://sonarcloud.io/dashboard?id=bami-flogert_openmrs-module-htmlformentry&pullRequest=19`
+2. Klik op **Quality Gate** → bekijk welke **conditie** rood is (vaak: *Coverage on New Code*, *New Issues*, of GitHub Actions-regels op gewijzigde workflow).
+3. Los de gemelde issues op in code, of markeer false positives als *Won't fix* in SonarCloud.
+4. Re-run de failed **SonarCloud Analysis** job op de PR.
+
+Veelvoorkomende oorzaak op deze PR: gewijzigde `.github/workflows/ci.yml` wordt door Sonar als *new code* geanalyseerd. Daarom sluit `sonar.exclusions=.github/**` workflows uit van de Java-kwaliteitsgate.
+
 ## A5. Quality Gate (NFR-M6)
 
 SonarCloud → **Quality Gates** → default **Sonar way** (free plan: geen custom gates).

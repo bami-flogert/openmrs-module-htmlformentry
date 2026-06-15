@@ -114,6 +114,8 @@ jobs:
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.organization=bami-flogert \
             -Dsonar.projectKey=bami-flogert_openmrs-module-htmlformentry \
+            -Dsonar.coverage.jacoco.xmlReportPaths=omod/target/site/jacoco/jacoco.xml \
+            -Dsonar.exclusions=.github/**,**/target/**,**/*.min.js \
             -Dsonar.qualitygate.wait=true \
             $PR_ARGS \
             --file pom.xml
