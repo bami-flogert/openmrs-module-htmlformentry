@@ -63,6 +63,20 @@ jobs:
     steps:
       - uses: actions/dependency-review-action@v4
 
+  zizmor:
+    name: zizmor (GitHub Actions security)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # continue-on-error: baseline has open findings; remove after remediation (see docs/zizmor.md)
+      - name: Run zizmor
+        uses: zizmorcore/zizmor-action@5f14fd08f7cf1cb1609c1e344975f152c7ee938d # v0.5.6
+        with:
+          advanced-security: false
+          annotations: true
+        continue-on-error: true
+
   sonarcloud:
     name: SonarCloud Analysis
     runs-on: ubuntu-latest

@@ -172,9 +172,9 @@ Gebruik ignores spaarzaam en noteer de reden (audittrail, control 8.8).
 | Stap | Status |
 |------|--------|
 | Baseline vastleggen (`zizmor .` lokaal) | ✅ Dit document |
-| Hoog-risico bevindingen beoordelen (`template-injection`, `unpinned-uses`) | Open |
-| Optioneel: [`zizmor-action`](https://github.com/zizmorcore/zizmor-action) in `ci.yml` | Niet geïmplementeerd |
-| Optioneel: SARIF upload naar GitHub code scanning | Niet geïmplementeerd |
+| CI-job in [`ci.yml`](../.github/workflows/ci.yml) (`zizmor`-job) | ✅ Aanwezig — `continue-on-error: true` tot bevindingen zijn opgelost |
+| Hoog-risico bevindingen beoordelen (`template-injection`, `unpinned-uses`) | Open — daarna `continue-on-error` verwijderen |
+| Optioneel: SARIF upload (`advanced-security: true`) | Niet geïmplementeerd |
 
 Voor CI-integratie en drempels: zie [zizmor quickstart](https://docs.zizmor.sh/quickstart/) en [usage](https://docs.zizmor.sh/usage/).
 
