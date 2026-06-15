@@ -65,7 +65,7 @@ public class HtmlFormEntryControllerTest extends BaseModuleContextSensitiveTest 
 		ReflectionTestUtils.setField(controller, "encounterServiceCompatibility", encounterServiceCompatibility);
 
 		request = new MockHttpServletRequest();
-		request.setSession(new MockHttpSession(null));
+		request.setSession(new MockHttpSession());
 	}
 
 	// T1 — Must
