@@ -1,0 +1,106 @@
+name: Snyk SAST & SCA Scan
+
+on:
+  push:
+    branches: [ main, development, pre-release, acceptatie ]
+  pull_request:
+    branches: [ main, development, pre-release, acceptatie ]
+  workflow_dispatch:
+
+jobs:
+  snyk:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check SNYK_TOKEN
+        id: snyk-enabled
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          if [ -z "$SNYK_TOKEN" ]; then
+            echo "Snyk skipped: SNYK_TOKEN not configured"
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout code
+        if: steps.snyk-enabled.outputs.enabled == 'true'
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 8
+        if: steps.snyk-enabled.outputs.enabled == 'true'
+        uses: actions/setup-java@v4
+        with:
+          java-version: '8'
+          distribution: 'temurin'
+          cache: maven
+
+      # Snyk heeft een geresolvede dependency-tree nodig voor Maven-projecten
+      - name: Resolve Maven dependencies
+        if: steps.snyk-enabled.outputs.enabled == 'true'
+        run: mvn -B install --file pom.xml -DskipTests
+
+      - name: Set up Snyk CLI
+        if: steps.snyk-enabled.outputs.enabled == 'true'
+        uses: snyk/actions/setup@9adf32b1121593767fc3c057af55b55db032dc04
+
+      - name: Snyk test (SCA)
+        if: steps.snyk-enabled.outputs.enabled == 'true'
+        run: snyk test --all-projects --json-file-output=snyk-results.json
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      # SAST: scant eigen broncode op kwetsbare code-patronen
+      - name: Snyk code test (SAST)
+        if: steps.snyk-enabled.outputs.enabled == 'true'
+        run: snyk code test --json-file-output=snyk-code-results.json
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      # SBOM in CycloneDX JSON-formaat
+      - name: Snyk SBOM
+        if: steps.snyk-enabled.outputs.enabled == 'true'
+        run: snyk sbom --all-projects --format=cyclonedx1.4+json > snyk-sbom.json
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      # SCA op Docker-images uit docker-compose.yml
+      - name: Snyk container test
+        run: |
+          snyk container test mysql:5.6.51 --json-file-output=snyk-container-mysql.json || true
+          snyk container test openmrs/openmrs-reference-application-distro:2.12.2 \
+            --json-file-output=snyk-container-openmrs.json || true
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      # Geprioriteerd patchadvies voor auditrapport (SBOM + CVE/CVSS)
+      - name: Generate patch advice
+        run: |
+          python3 .github/scripts/generate-patch-advice.py \
+            --maven snyk-results.json \
+            --docker snyk-container-mysql.json snyk-container-openmrs.json \
+            --output docs/auditrapport/07-patchadvies.md
+
+      # Ruwe output opslaan als artifact (bewijs voor het auditrapport)
+      - name: Upload Snyk results
+        if: steps.snyk-enabled.outputs.enabled == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-results
+          path: |
+            snyk-results.json
+            snyk-code-results.json
+            snyk-sbom.json
+            snyk-container-mysql.json
+            snyk-container-openmrs.json
+            docs/auditrapport/07-patchadvies.md

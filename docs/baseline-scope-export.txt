@@ -1,0 +1,25 @@
+Baseline scope export
+Generated: 2026-06-11 17:02
+Filter: *.java, exclude target/, NCLOC (SonarCloud nLines-equivalent)
+
+=== Maven submodules in SonarCloud/module-breed scope ===
+api             files=186 ncloc= 18951 physical= 28166
+api-tests       files= 53 ncloc= 12901 physical= 17128
+omod            files= 16 ncloc=  1643 physical=  2102
+api-1.9         files=  5 ncloc=   173 physical=   269
+api-1.10        files=  7 ncloc=  1197 physical=  1584
+api-2.0         files=  8 ncloc=   205 physical=   345
+api-2.2         files=  3 ncloc=   403 physical=   501
+release-tests   files=  3 ncloc=    71 physical=   135
+SUM ncloc: 35544
+
+=== PoC-scope: OMOD controllers (13 files) ===
+files=13 ncloc=1261 physical=1621
+
+=== OMOD S3776 baseline (from SonarCloud dashboard, filter omod/) ===
+Total OMOD violations: 5
+HtmlFormEntryController.getFormEntrySession CC=52
+PopupWidgetController.personSearch CC=55
+HtmlFormEncounterController.getValue CC=35
+HtmlFormSearchController.conceptSearch CC=29
+HtmlFormFromFileController.handleRequest CC=20

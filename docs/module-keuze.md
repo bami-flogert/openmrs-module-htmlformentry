@@ -33,3 +33,16 @@ De module raakt de drie relevante regelgebieden van de NEN-7510:
 
 De module telt meerdere tientallen Java-klassen, een eigen tag-library, een Velocity/Freemarker templatelaag en integratiepunten met de OpenMRS Core API. De complexiteit is groot genoeg voor een zinvolle analyse.
 
+---
+
+## Gerelateerde documentatie
+
+| Document | Inhoud |
+|----------|--------|
+| [`auditrapport/00-auditrapport.md`](auditrapport/00-auditrapport.md) | Hoofdrapport security & compliance audit |
+| [`auditrapport/01-gap-analyse.md`](auditrapport/01-gap-analyse.md) | Gap-analyse NEN-7510 controls A.8.3 / A.8.5 / A.8.15 |
+| [`auditrapport/02-pipeline-compliance.md`](auditrapport/02-pipeline-compliance.md) | Pipeline-compliance (bijlage B) |
+| [`otap.md`](otap.md) | OTAP-pipeline: branches, omgevingen, workflows |
+| [`onderhoudbaarheid/01-nfr-onderhoudbaarheid.md`](onderhoudbaarheid/01-nfr-onderhoudbaarheid.md) | NFR onderhoudbaarheid (JaCoCo, SonarCloud) |
+| [`security.md`](security.md) | Vulnerability disclosure policy |
+

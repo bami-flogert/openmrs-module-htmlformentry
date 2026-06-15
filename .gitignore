@@ -2,6 +2,7 @@
 .project
 .settings/*
 target/*
+**/target/
 api/.classpath
 api/.project
 api/.settings/*
@@ -15,3 +16,4 @@ omod/target/*
 *.idea
 *.ipr
 *.iws
+.env

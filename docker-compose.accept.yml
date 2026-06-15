@@ -3,15 +3,15 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    ports:
-      - "3306:3306"
+    restart: always
 
   openmrs:
     environment:
       DB_PASSWORD: ${MYSQL_PASSWORD}
-      OMRS_DEV_DEBUG_PORT: 1044
     ports:
       - "8080:8080"
-      - "1044:1044"
-    volumes:
-      - ./omod/target:/openmrs/distribution/openmrs_modules
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 2g

@@ -1,0 +1,48 @@
+# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+
+registries:
+  openmrs-public:
+    type: maven-repository
+    url: https://mavenrepo.openmrs.org/nexus/content/repositories/public
+
+updates:
+  - package-ecosystem: maven
+    directory: /
+    registries:
+      - openmrs-public
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      all-dependencies:
+        patterns:
+          - '*'
+    ignore:
+      # OpenMRS platform versions are managed via Maven profiles/properties
+      - dependency-name: org.openmrs.api:*
+      - dependency-name: org.openmrs.web:*
+      - dependency-name: org.openmrs.test:*
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      all-dependencies:
+        patterns:
+          - '*'
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7

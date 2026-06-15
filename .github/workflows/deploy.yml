@@ -5,16 +5,48 @@ on:
     branches:
       - development
       - pre-release
+      - acceptatie
       - main
+
+concurrency:
+  group: otap-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TZ: America/New_York
 
 permissions:
   contents: read
 
 jobs:
+  sbom:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Export GitHub SBOM (SPDX)
+        run: |
+          mkdir -p docs
+          gh api /repos/${{ github.repository }}/dependency-graph/sbom \
+            --jq '.sbom' > docs/sbom.spdx.json
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-sbom
+          path: docs/sbom.spdx.json
+          retention-days: 365
+
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Set up JDK 8
         uses: actions/setup-java@v4
@@ -33,14 +65,79 @@ jobs:
           path: omod/target/*.omod
           retention-days: 365
 
+  unit-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          java-version: '8'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run PoC-scope unit tests
+        run: mvn -B -pl omod test verify --file pom.xml
+
+      - name: Upload JaCoCo report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jacoco-report
+          path: omod/target/site/jacoco/
+          if-no-files-found: ignore
+          retention-days: 30
+
+  bundle:
+    needs: [build, sbom]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: omod
+          path: bundle/omod/target/
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-sbom
+          path: bundle/docs/
+      - name: Record build provenance
+        env:
+          BUILD_RUN_ID: ${{ github.run_id }}
+          BUILD_RUN_NUMBER: ${{ github.run_number }}
+          BUILD_SHA: ${{ github.sha }}
+          BUILD_REF: ${{ github.ref }}
+          BUILD_WORKFLOW: ${{ github.workflow }}
+        run: |
+          mkdir -p bundle/provenance
+          cat > bundle/provenance/build-run.json <<EOF
+          {
+            "run_id": "${BUILD_RUN_ID}",
+            "run_number": ${BUILD_RUN_NUMBER},
+            "sha": "${BUILD_SHA}",
+            "ref": "${BUILD_REF}",
+            "workflow": "${BUILD_WORKFLOW}"
+          }
+          EOF
+      - name: Upload OTAP build bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: otap-build-bundle
+          path: bundle/
+          retention-days: 365
+
   deploy-dev:
-    needs: build
+    needs: [build, unit-test, sbom, bundle]
     if: github.ref == 'refs/heads/development'
     runs-on: ubuntu-latest
     environment:
       name: dev
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
           name: omod
@@ -51,15 +148,25 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+      - name: Smoke test
+        run: bash .github/scripts/smoke-test.sh 8080
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.yml -f docker-compose.dev.yml down -v
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
 
   deploy-test:
-    needs: build
+    needs: [build, unit-test, sbom, bundle]
     if: github.ref == 'refs/heads/pre-release'
     runs-on: ubuntu-latest
     environment:
       name: test
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
           name: omod
@@ -70,15 +177,54 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+      - name: Smoke test
+        run: bash .github/scripts/smoke-test.sh 8080
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.yml -f docker-compose.test.yml down -v
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+
+  deploy-accept:
+    needs: [build, unit-test, sbom, bundle]
+    if: github.ref == 'refs/heads/acceptatie'
+    runs-on: ubuntu-latest
+    environment:
+      name: acceptatie
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: omod
+          path: omod/target/
+      - name: Deploy to acceptatie
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.accept.yml up -d --build
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+      - name: Smoke test
+        run: bash .github/scripts/smoke-test.sh 8080
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.yml -f docker-compose.accept.yml down -v
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
 
   deploy-prod:
-    needs: build
+    needs: [build, unit-test, sbom, bundle]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: prod
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
           name: omod
@@ -89,3 +235,55 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+      - name: Smoke test
+        run: bash .github/scripts/smoke-test.sh 80
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.yml -f docker-compose.prod.yml down -v
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+
+  publish-prod-release:
+    needs: [deploy-prod, bundle]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          java-version: '8'
+          distribution: 'temurin'
+          cache: maven
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: otap-build-bundle
+          path: bundle/
+
+      - name: Resolve module version
+        run: echo "MODULE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> "$GITHUB_ENV"
+
+      - name: Publish GitHub Release assets
+        run: |
+          TAG="v${MODULE_VERSION}"
+          OMOD_FILE=$(find bundle/omod/target -name '*.omod' | head -1)
+          SBOM_FILE="bundle/docs/sbom.spdx.json"
+          PROVENANCE_FILE="bundle/provenance/build-run.json"
+          NOTES="OTAP production deploy — workflow run ${{ github.run_id }} (commit ${{ github.sha }})"
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$OMOD_FILE" "$SBOM_FILE" "$PROVENANCE_FILE" --clobber
+          else
+            gh release create "$TAG" "$OMOD_FILE" "$SBOM_FILE" "$PROVENANCE_FILE" \
+              --title "$TAG" \
+              --notes "$NOTES"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
