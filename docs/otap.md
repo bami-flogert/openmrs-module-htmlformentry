@@ -78,7 +78,7 @@ Hetzelfde gebouwde OMOD-artefact en SBOM uit één workflow-run worden gebundeld
 | Smoke test | Na deploy | Deploy-job faalt | A.8.15 — deployment-validatie |
 | JaCoCo rapport | Na unit tests | Artifact voor audit/evidence | A.8.15 — testbewijs (zie NFR-T1) |
 | PR CI | Vóór merge | Merge blokkeerbaar via branch protection | A.8.3 / A.8.5 — gecontroleerde wijzigingen |
-| SonarCloud | Op PR | Merge blokkeerbaar via branch protection (GitHub App) | A.8.15 — statische analyse |
+| SonarCloud | Op PR + push `main` | CI-job faalt bij Failed gate (`sonar.qualitygate.wait=true`) | A.8.15 — statische analyse |
 
 **Testscope:** CI en deploy draaien `mvn -B -pl omod test verify` (OMOD PoC-scope). Module-brede regressietests in `api-tests` (~70 bekende failures) vallen buiten de CI-gate; zie teststrategie in `opdracht/plan-teststrategie-goed.md`.
 
@@ -96,6 +96,9 @@ Trigger: `pull_request` naar `development`, `pre-release`, `acceptatie` of `main
 | `build` | Compileert en bouwt OMOD |
 | `unit-test` | PoC-scope tests + JaCoCo (`mvn -pl omod test verify`) |
 | `dependency-review` | Controle op kwetsbare nieuwe dependencies |
+| `sonarcloud` | SonarCloud-analyse + quality gate (`sonar:sonar`, `sonar.qualitygate.wait=true`) |
+
+Setup en secrets: [`sonarcloud-setup.md`](sonarcloud-setup.md).
 
 Parallel draait [Snyk](../.github/workflows/snyk.yml) (SCA + SAST + CycloneDX SBOM + patchadvies) wanneer `SNYK_TOKEN` is geconfigureerd. Het rapport [`auditrapport/07-patchadvies.md`](auditrapport/07-patchadvies.md) wordt in die workflow gegenereerd en opgeslagen in het `snyk-results` artifact.
 
@@ -107,7 +110,7 @@ Parallel draait [Snyk](../.github/workflows/snyk.yml) (SCA + SAST + CycloneDX SB
 
 | Workflow | Bestand | Trigger | Doel |
 |----------|---------|---------|------|
-| CI | `ci.yml` | `pull_request` | Validatie vóór merge |
+| CI | `ci.yml` | `pull_request`, `push` → `main` | Validatie vóór merge + SonarCloud baseline |
 | Deploy OTAP | `deploy.yml` | `push` OTAP-branches | Build, SBOM, test, bundle, deploy, prod release |
 | Snyk | `snyk.yml` | `push` + `pull_request` | SAST/SCA + CycloneDX SBOM + patchadvies (`07-patchadvies.md`) |
 
@@ -140,21 +143,23 @@ De pipeline-code staat in de repository; onderstaande stappen configureer je in 
 
 Optioneel: `SNYK_TOKEN` als repository secret voor [`snyk.yml`](../.github/workflows/snyk.yml).
 
+**Verplicht voor SonarCloud CI:** `SONAR_TOKEN` — zie [`sonarcloud-setup.md`](sonarcloud-setup.md).
+
 ### Checklist branch protection
 
 **Settings → Branches → Add rule** (per OTAP-branch)
 
 - [ ] Require a pull request before merging
-- [ ] Require status checks: `build`, `unit-test` (workflow **CI**)
+- [ ] Require status checks: `build`, `unit-test`, `SonarCloud Analysis` (workflow **CI**)
 - [ ] Optioneel: `dependency-review`, Snyk-job
 - [ ] Restrict pushes die de promotieketen overslaan (bijv. geen directe push `development` → `main`)
 
 | Branch | Minimale required checks |
 |--------|-------------------------|
-| `development` | `build`, `unit-test` |
-| `pre-release` | `build`, `unit-test` |
-| `acceptatie` | `build`, `unit-test` |
-| `main` | `build`, `unit-test` |
+| `development` | `build`, `unit-test`, `SonarCloud Analysis` |
+| `pre-release` | `build`, `unit-test`, `SonarCloud Analysis` |
+| `acceptatie` | `build`, `unit-test`, `SonarCloud Analysis` |
+| `main` | `build`, `unit-test`, `SonarCloud Analysis` |
 
 ### Lokaal draaien (development)
 
@@ -194,7 +199,7 @@ Dependabot (`package-ecosystem: docker`) opent PRs bij nieuwere image-versies.
 | CycloneDX SBOM alleen via Snyk | SPDX zit in deploy-bundle; CycloneDX apart in `snyk.yml` | ⚠️ |
 | Snyk niet als harde gate | `continue-on-error: true` in `snyk.yml` | ⚠️ |
 | Snyk skipped zonder token | Geen scan op forks of zonder `SNYK_TOKEN` | ✅ |
-| SonarCloud via GitHub App | Geen Maven-plugin/workflow in repo; merge-block via branch protection | ⚠️ |
+| SonarCloud in CI | `sonarcloud`-job in `ci.yml` met `sonar.qualitygate.wait=true`; free plan: default Sonar way quality gate | ✅ |
 | GitHub UI niet afgedwongen in code | Environment reviewers en branch protection vereisen handmatige repo-instellingen | ⚠️ |
 
 Voor echte gescheiden OTAP-hosting zijn self-hosted runners of deploy naar externe VMs nodig.

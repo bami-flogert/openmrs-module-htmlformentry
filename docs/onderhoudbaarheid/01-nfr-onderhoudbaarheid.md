@@ -127,9 +127,10 @@ De pipeline moet merges blokkeren wanneer onderhoudbaarheidsdrempels niet worden
 
 **Meetbaar (SonarCloud Quality Gate):**
 
-- Quality Gate **Passed** vereist voor merge naar `development` / `pre-release` / `main` (via branch protection op de SonarCloud PR-check)
-- Drempels in SonarCloud afgestemd op NFR-M1 t/m M5 (minimaal: geen new blocker/critical bugs, geen new critical smells, coverage on new code ≥ drempel)
-- SonarCloud draait via de **GitHub App-integratie** (PR-check “SonarCloud Code Analysis”); er is geen `sonar-maven-plugin` of `sonar.qualitygate.wait` in een repository-workflow
+- Quality Gate **Passed** vereist voor merge naar `development` / `pre-release` / `acceptatie` / `main`
+- Drempels in SonarCloud afgestemd op NFR-M1 t/m M5 (minimaal: geen new blocker/critical bugs, geen new critical smells, 0 new S3776 op changed code)
+- `sonar.qualitygate.wait=true` in [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) (`sonarcloud`-job); CI faalt bij Failed gate
+- Free plan: default **Sonar way** quality gate (geen custom gates); zie [`sonarcloud-setup.md`](../sonarcloud-setup.md)
 
 **Scope:** module-breed · New Code policy voor PRs
 
@@ -143,11 +144,11 @@ Elke wijziging wordt automatisch geanalyseerd; handmatige kwaliteitscontrole all
 
 **Meetbaar:**
 
-- **100%** pull requests triggeren SonarCloud-analyse (GitHub App)
-- Analyse-resultaat (Quality Gate + link) zichtbaar in PR-checks
-- Baseline-analyse op `main` minimaal één keer per sprint opnieuw vastgelegd
+- **100%** pull requests triggeren SonarCloud-analyse via `ci.yml` (`sonarcloud`-job)
+- Analyse-resultaat (Quality Gate + link) zichtbaar in PR-checks **SonarCloud Analysis**
+- Baseline-analyse op `main` minimaal één keer per sprint (trigger: `push` naar `main`)
 
-**Scope:** SonarCloud GitHub App (geen aparte workflow in `.github/workflows/`)
+**Scope:** CI/CD — [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml), config in [`sonar-project.properties`](../../sonar-project.properties)
 
 ---
 
@@ -175,7 +176,7 @@ Kwaliteitsbevindingen en refactorkeuzes zijn traceerbaar naar metrieken en code-
 | M2    | Duplicated Lines (%)                | Geen verslechtering (ratchet)    |
 | M4    | Code Smells, Maintainability Rating | 0 new blocker/critical smells    |
 | M5    | Coverage, JaCoCo-report             | ≥ 60% on new code (PoC-fase)     |
-| M6/M7 | Overall Quality Gate                | Fail merge via branch protection op SonarCloud-check |
+| M6/M7 | Overall Quality Gate                | Fail CI bij Failed (`sonar.qualitygate.wait=true`) |
 
 ---
 
@@ -184,7 +185,7 @@ Kwaliteitsbevindingen en refactorkeuzes zijn traceerbaar naar metrieken en code-
 Het team voldoet aan deze NFR-set wanneer:
 
 1. Baseline-metrieken op volledige module zijn vastgelegd.
-2. SonarCloud Quality Gate actief via GitHub App; merge blokkeerbaar via branch protection.
+2. SonarCloud Quality Gate actief in CI (`sonarcloud`-job) en merge blokkeerbaar via branch protection.
 3. Minimaal **één** PoC-refactoring in PoC-scope is uitgevoerd conform ontwerp.
 4. Voor/na-metrieken aantonen dat minimaal **NFR-M1, M3 en M4** zijn verbeterd of gehaald in PoC-scope.
 5. PoC-scope tests draaien groen in CI; coverage in PoC-scope is gemeten en gedocumenteerd.
@@ -196,3 +197,5 @@ Het team voldoet aan deze NFR-set wanneer:
 | Document    | Locatie                |
 | ----------- | ---------------------- |
 | Modulekeuze | `docs/module-keuze.md` |
+| SonarCloud setup | `docs/sonarcloud-setup.md` |
+| CI-workflow | `.github/workflows/ci.yml` |
