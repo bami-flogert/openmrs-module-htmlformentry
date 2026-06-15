@@ -32,11 +32,16 @@ Wijkt de project key in SonarCloud af? Pas `sonar-project.properties` aan vóór
 3. Name: `SONAR_TOKEN` (exact)
 4. Value: token uit A2
 
-## A4. GitHub-integratie (PR-decoratie)
+## A4. GitHub-integratie en analyse-methode
 
 1. SonarCloud → Organization Settings → **GitHub**.
 2. Controleer dat `bami-flogert/openmrs-module-htmlformentry` gekoppeld is.
 3. Project Settings → **Pull Request Decoration** → GitHub ingeschakeld.
+4. Project Settings → **Analysis Method**:
+   - **Automatic Analysis** uitzetten (GitHub App)
+   - **CI-based Analysis** aanzetten (`ci.yml` Maven-job)
+
+Zonder stap 4 faalt CI met: *"You are running CI analysis while Automatic Analysis is enabled"*.
 
 ## A5. Quality Gate (NFR-M6)
 
@@ -66,6 +71,7 @@ De Sonar-scan draait op **JDK 17** (scanner-vereiste); build en tests blijven op
 - [ ] Organization en project key gecontroleerd
 - [ ] `SONAR_TOKEN` in GitHub Actions secrets
 - [ ] GitHub-integratie actief
+- [ ] Automatic Analysis uitgeschakeld; CI-based Analysis ingeschakeld
 - [ ] Eerste PR-run groen (Quality Gate Passed)
 - [ ] Branch protection met SonarCloud-check
 
