@@ -104,6 +104,6 @@ PR #15 levert de OTAP-pipeline, CI-validatie, security-tooling en audit-document
 - [x] Lokaal `mvn -pl omod test verify` groen
 - [x] Geen gecommitte `target/`-bestanden
 - [x] NFR + otap docs gecorrigeerd
-- [ ] `gh pr checks 15` groen (na push)
-- [ ] Branch protection handmatig in GitHub UI
-- [ ] PR #12 sluiten als superseded
+- [x] `gh pr checks 15` groen (CI + Deploy OTAP unit-test, deploy-accept; run na commit `723217d`)
+- [ ] Branch protection handmatig in GitHub UI (`build`, `unit-test` verplicht op `main`)
+- [x] PR #12 gesloten (was al superseded door PR #15)
