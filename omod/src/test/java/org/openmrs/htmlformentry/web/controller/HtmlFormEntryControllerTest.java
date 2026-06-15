@@ -21,6 +21,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 
 /**
  * Characterization tests for {@link HtmlFormEntryController#getFormEntrySession}.
@@ -30,6 +31,8 @@ public class HtmlFormEntryControllerTest extends BaseModuleContextSensitiveTest 
 
 	private static final String HTML_FORM_XML = "org/openmrs/module/htmlformentry/include/simplestForm.xml";
 	private static final int PATIENT_ID = 2;
+	private static final Date ENCOUNTER_DATE_OLD = new GregorianCalendar(2010, Calendar.JANUARY, 1).getTime();
+	private static final Date ENCOUNTER_DATE_RECENT = new GregorianCalendar(2010, Calendar.JANUARY, 10).getTime();
 
 	private HtmlFormEntryController controller;
 	private MockHttpServletRequest request;
@@ -80,7 +83,7 @@ public class HtmlFormEntryControllerTest extends BaseModuleContextSensitiveTest 
 	// T2 — Must
 	@Test
 	public void shouldCreateViewSessionWithEncounterId() throws Exception {
-		Encounter saved = saveEncounter(daysAgo(1));
+		Encounter saved = saveEncounter(ENCOUNTER_DATE_RECENT);
 
 		request.setParameter("encounterId", String.valueOf(saved.getEncounterId()));
 
@@ -94,8 +97,8 @@ public class HtmlFormEntryControllerTest extends BaseModuleContextSensitiveTest 
 	// T3 — Must
 	@Test
 	public void shouldSelectFirstEncounterWhenWhichIsFirst() throws Exception {
-		Encounter first = saveEncounter(daysAgo(10));
-		Encounter last = saveEncounter(daysAgo(1));
+		Encounter first = saveEncounter(ENCOUNTER_DATE_OLD);
+		Encounter last = saveEncounter(ENCOUNTER_DATE_RECENT);
 
 		request.setParameter("which", "first");
 		request.setParameter("mode", "view");
@@ -109,8 +112,8 @@ public class HtmlFormEntryControllerTest extends BaseModuleContextSensitiveTest 
 	// T4 — Must
 	@Test
 	public void shouldSelectLastEncounterWhenWhichIsLast() throws Exception {
-		Encounter first = saveEncounter(daysAgo(10));
-		Encounter last = saveEncounter(daysAgo(1));
+		Encounter first = saveEncounter(ENCOUNTER_DATE_OLD);
+		Encounter last = saveEncounter(ENCOUNTER_DATE_RECENT);
 
 		request.setParameter("which", "last");
 		request.setParameter("mode", "view");
@@ -193,11 +196,5 @@ public class HtmlFormEntryControllerTest extends BaseModuleContextSensitiveTest 
 		encounter.setLocation(Context.getLocationService().getLocation(2));
 		encounter.setEncounterType(Context.getEncounterService().getEncounterType(1));
 		return Context.getEncounterService().saveEncounter(encounter);
-	}
-
-	private static Date daysAgo(int days) {
-		Calendar calendar = Calendar.getInstance();
-		calendar.add(Calendar.DAY_OF_YEAR, -days);
-		return calendar.getTime();
 	}
 }
