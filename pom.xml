@@ -202,6 +202,11 @@
 		<openMRSMinorVersion>1.9</openMRSMinorVersion>
         <jacksonVersion>1.5.0</jacksonVersion>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<sonar.organization>bami-flogert</sonar.organization>
+		<sonar.projectKey>bami-flogert_openmrs-module-htmlformentry</sonar.projectKey>
+		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
+		<sonar.exclusions>.github/**,**/target/**,**/*.min.js</sonar.exclusions>
+		<sonar.coverage.jacoco.xmlReportPaths>omod/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 
 	<modules>
