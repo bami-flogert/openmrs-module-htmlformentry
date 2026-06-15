@@ -45,13 +45,14 @@ import org.springframework.web.bind.annotation.ResponseBody;
  * <p/>
  * Handles {@code htmlFormEntry.form} requests. Renders view {@code htmlFormEntry.jsp}.
  * <p/>
- * TODO: getFormEntrySession still orchestrates request parsing and session construction.
- * Mode-resolution, encounter/HtmlForm/patient/"which" resolution, the patient-required-for-
- * session check and the modified-timestamp concurrency checks have already been extracted into
- * small methods on this controller (or moved to {@link FormEntrySession}) as part of the
- * maintainability PoC. Remaining candidates: extracting the encounter-vs-no-encounter branch
- * itself, and the {@link FormEntrySession} construction + post-construction setup at the end of
- * the method.
+ * Note: getFormEntrySession used to be a single ~85-line method (cognitive complexity 52) that
+ * orchestrated request parsing, encounter/HtmlForm/patient/"which" resolution and session
+ * construction. As part of the maintainability PoC this has been broken up into small,
+ * independently testable methods: mode-resolution ({@link #resolveMode}), encounter/HtmlForm/
+ * patient/"which" resolution ({@link #resolveFormEntryContext}), the patient-required-for-session
+ * check ({@link #resolvePatientForSession}), and session construction + the modified-timestamp
+ * concurrency checks ({@link #buildFormEntrySession}, which also delegates to
+ * {@link FormEntrySession}). getFormEntrySession itself is now just orchestration.
  */
 @Controller
 public class HtmlFormEntryController {
@@ -108,58 +109,17 @@ public class HtmlFormEntryController {
     		personId = Integer.valueOf(request.getParameter("personId"));
     	}
 
-        Patient patient = null;
-    	Encounter encounter = null;
-    	HtmlForm htmlForm = null;
+        FormEntryResolution resolution = resolveFormEntryContext(request, formId, htmlFormId, personId, patientId);
+        Patient patient = resolution.getPatient();
+        Encounter encounter = resolution.getEncounter();
+        HtmlForm htmlForm = resolution.getHtmlForm();
+        personId = resolution.getPersonId();
+        patientId = resolution.getPatientId();
 
-    	if (StringUtils.hasText(request.getParameter("encounterId"))) {
-
-    		String encounterId = request.getParameter("encounterId");
-    		encounter = resolveEncounterById(encounterId);
-    		patient = encounter.getPatient();
-    		patientId = patient.getPatientId();
-            personId = patient.getPersonId();
-            
-            htmlForm = resolveHtmlFormForEncounter(formId, encounter);
-
-    	} else { // no encounter specified
-
-    		// get person from patientId/personId (register module uses patientId, htmlformentry uses personId)
-			if (patientId != null) {
-				personId = patientId;
-			}
-			patient = resolvePatient(personId);
-
-			htmlForm = resolveHtmlForm(htmlFormId, formId);
-
-			String which = request.getParameter("which");
-			if (StringUtils.hasText(which)) {
-				encounter = resolveWhichEncounter(which, patient, htmlForm.getForm());
-			}
-    	}
-    	
 		patient = resolvePatientForSession(patient, mode, personId, patientId);
 
-        FormEntrySession session = null;
-		if (encounter != null) {
-			session = new FormEntrySession(patient, encounter, mode, htmlForm, request.getSession());
-		} 
-		else {
-			session = new FormEntrySession(patient, htmlForm, request.getSession());
-		}
-
-        if (StringUtils.hasText(returnUrl)) {
-            session.setReturnUrl(returnUrl);
-        }
-
-        // Since we're not using a sessionForm, we need to check that the underlying form/encounter
-        // were not modified after the client took these timestamps (optimistic-concurrency check).
-        session.validateNotModifiedSinceTimestamps(formModifiedTimestamp, encounterModifiedTimestamp);
-
-        if (hasChangedInd != null) session.setHasChangedInd(hasChangedInd);
-
-        // ensure we've generated the form's HTML (and thus set up the submission actions, etc) before we do anything
-        session.getHtmlToDisplay();
+        FormEntrySession session = buildFormEntrySession(patient, encounter, mode, htmlForm, request, returnUrl,
+                formModifiedTimestamp, encounterModifiedTimestamp, hasChangedInd);
 
         setVolatileUserData(FORM_IN_PROGRESS_KEY, session);
        
@@ -332,6 +292,161 @@ public class HtmlFormEntryController {
             return new Patient();
         }
         throw new IllegalArgumentException("No patient with id of personId=" + personId + " or patientId=" + patientId);
+    }
+
+    /**
+     * Resolves the {@link Patient}, {@link Encounter} and {@link HtmlForm} for a form-entry
+     * session based on the request parameters.
+     * <p/>
+     * If the "encounterId" request parameter is present, the session is based on that existing
+     * {@link Encounter}: the patient, patientId and personId are derived from the encounter (see
+     * {@link #resolveEncounterById}), and the {@link HtmlForm} is resolved via
+     * {@link #resolveHtmlFormForEncounter}.
+     * <p/>
+     * Otherwise, the patient is resolved from personId/patientId (see {@link #resolvePatient}),
+     * the {@link HtmlForm} is resolved via {@link #resolveHtmlForm}, and if the "which" request
+     * parameter is present, an existing encounter for that patient/form is resolved via
+     * {@link #resolveWhichEncounter}.
+     *
+     * @param request the incoming request
+     * @param formId optional formId request parameter, used when resolving the HtmlForm
+     * @param htmlFormId optional htmlFormId request parameter, used when resolving the HtmlForm
+     * @param personId the personId resolved so far (may be {@code null})
+     * @param patientId the patientId resolved so far (may be {@code null})
+     * @return a {@link FormEntryResolution} holding the resolved patient, encounter, htmlForm,
+     *         and the (possibly updated) personId/patientId
+     */
+    FormEntryResolution resolveFormEntryContext(HttpServletRequest request, Integer formId, Integer htmlFormId,
+            Integer personId, Integer patientId) {
+
+        Patient patient;
+        Encounter encounter = null;
+        HtmlForm htmlForm;
+
+        if (StringUtils.hasText(request.getParameter("encounterId"))) {
+
+            String encounterId = request.getParameter("encounterId");
+            encounter = resolveEncounterById(encounterId);
+            patient = encounter.getPatient();
+            patientId = patient.getPatientId();
+            personId = patient.getPersonId();
+
+            htmlForm = resolveHtmlFormForEncounter(formId, encounter);
+
+        } else { // no encounter specified
+
+            // get person from patientId/personId (register module uses patientId, htmlformentry uses personId)
+            if (patientId != null) {
+                personId = patientId;
+            }
+            patient = resolvePatient(personId);
+
+            htmlForm = resolveHtmlForm(htmlFormId, formId);
+
+            String which = request.getParameter("which");
+            if (StringUtils.hasText(which)) {
+                encounter = resolveWhichEncounter(which, patient, htmlForm.getForm());
+            }
+        }
+
+        return new FormEntryResolution(patient, encounter, htmlForm, personId, patientId);
+    }
+
+    /**
+     * Immutable holder for the result of {@link #resolveFormEntryContext}: the resolved
+     * {@link Patient}, {@link Encounter} and {@link HtmlForm}, plus the (possibly updated)
+     * personId/patientId.
+     */
+    static class FormEntryResolution {
+
+        private final Patient patient;
+
+        private final Encounter encounter;
+
+        private final HtmlForm htmlForm;
+
+        private final Integer personId;
+
+        private final Integer patientId;
+
+        FormEntryResolution(Patient patient, Encounter encounter, HtmlForm htmlForm, Integer personId, Integer patientId) {
+            this.patient = patient;
+            this.encounter = encounter;
+            this.htmlForm = htmlForm;
+            this.personId = personId;
+            this.patientId = patientId;
+        }
+
+        Patient getPatient() {
+            return patient;
+        }
+
+        Encounter getEncounter() {
+            return encounter;
+        }
+
+        HtmlForm getHtmlForm() {
+            return htmlForm;
+        }
+
+        Integer getPersonId() {
+            return personId;
+        }
+
+        Integer getPatientId() {
+            return patientId;
+        }
+    }
+
+    /**
+     * Builds and prepares the {@link FormEntrySession} for the given patient/encounter/htmlForm.
+     * <p/>
+     * Constructs the session (encounter-based if {@code encounter} is not {@code null},
+     * otherwise patient/htmlForm-based), applies the optional returnUrl, performs the
+     * optimistic-concurrency check against the given modified timestamps, applies the
+     * hasChangedInd flag, and ensures the form's HTML has been generated (which also sets up the
+     * submission actions).
+     *
+     * @param patient the patient for the session
+     * @param encounter the encounter for the session, or {@code null} if the session is not
+     *            based on an existing encounter
+     * @param mode the form-entry mode
+     * @param htmlForm the HtmlForm for the session
+     * @param request the incoming request (used to obtain the HTTP session)
+     * @param returnUrl optional returnUrl to set on the session
+     * @param formModifiedTimestamp optional form-modified timestamp for the concurrency check
+     * @param encounterModifiedTimestamp optional encounter-modified timestamp for the
+     *            concurrency check
+     * @param hasChangedInd optional hasChangedInd flag
+     * @return the constructed and prepared {@link FormEntrySession}
+     */
+    FormEntrySession buildFormEntrySession(Patient patient, Encounter encounter, Mode mode, HtmlForm htmlForm,
+            HttpServletRequest request, String returnUrl, Long formModifiedTimestamp, Long encounterModifiedTimestamp,
+            String hasChangedInd) throws Exception {
+
+        FormEntrySession session;
+        if (encounter != null) {
+            session = new FormEntrySession(patient, encounter, mode, htmlForm, request.getSession());
+        } else {
+            session = new FormEntrySession(patient, htmlForm, request.getSession());
+        }
+
+        if (StringUtils.hasText(returnUrl)) {
+            session.setReturnUrl(returnUrl);
+        }
+
+        // Since we're not using a sessionForm, we need to check that the underlying form/encounter
+        // were not modified after the client took these timestamps (optimistic-concurrency check).
+        session.validateNotModifiedSinceTimestamps(formModifiedTimestamp, encounterModifiedTimestamp);
+
+        if (hasChangedInd != null) {
+            session.setHasChangedInd(hasChangedInd);
+        }
+
+        // ensure we've generated the form's HTML (and thus set up the submission actions, etc) before we do anything
+        session.getHtmlToDisplay();
+
+        return session;
     }
 
     /**
