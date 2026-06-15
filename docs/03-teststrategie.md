@@ -11,7 +11,7 @@
 |----------|---------|
 | Onderhoudbaarheidsrapport (baseline) | [`onderhoudbaarheidsrapport.md`](onderhoudbaarheidsrapport.md) |
 | NFRs onderhoudbaarheid | [`01-nfr-onderhoudbaarheid.md`](01-nfr-onderhoudbaarheid.md) |
-| Testresultaten baseline | [`04-testresultaten-baseline.md`](04-testresultaten-baseline.md) *(nog aan te maken)* |
+| Testresultaten baseline | [`04-testresultaten-baseline.md`](04-testresultaten-baseline.md) |
 | Validatie voor/na PoC | [`07-validatie-voor-na.md`](07-validatie-voor-na.md) *(nog aan te maken)* |
 
 ---
