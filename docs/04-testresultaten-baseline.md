@@ -1,7 +1,7 @@
 # Testresultaten baseline — OpenMRS HTML Form Entry
 
-**Datum:** 15 juni 2026 · **Commit:** `e8c6d4b` · **Branch:** `implem-tests`  
-**Scope:** A = PoC (`omod`), B = module-baseline (`api`, `api-tests`) — zie [`03-teststrategie.md`](03-teststrategie.md)
+**Datum:** 15 juni 2026 · **Branch:** `implem-tests`  
+**Scope:** A = PoC (`omod`), B = module-baseline — zie [`03-teststrategie.md`](03-teststrategie.md)
 
 ---
 
@@ -9,42 +9,34 @@
 
 | | |
 |---|---|
-| Omgeving | Windows 10, Temurin JDK 8.0_482, Maven 3.9.12, TZ `America/New_York` |
-| Scope A | `mvn -pl omod test verify` → **BUILD SUCCESS** (~11 s) |
-| Scope B | `mvn -pl api-tests test` → **BUILD FAILURE**; `mvn test` stopt vroeg bij `api-1.10` |
-
-Surefire: `omod/target/surefire-reports/`, `api-tests/target/surefire-reports/`  
-JaCoCo: `omod/target/site/jacoco/`
+| Omgeving | Windows 10, Temurin JDK 8.0_482, Maven 3.9.12 |
+| Scope A | `mvn -pl omod test verify` → **BUILD SUCCESS** (~15 s, **19 tests**) |
+| Scope B | `mvn -pl api-tests test` → 529 tests, 71 rood (gedocumenteerd, niet gefixt) |
 
 ---
 
-## Resultaten
+## Resultaten Scope A
 
-| Scope | Module / klasse | Run | Groen | Rood | Status |
-|-------|-----------------|-----|-------|------|--------|
-| **A** | `omod` (2 klassen) | 9 | 9 | 0 | ✅ |
-| **B** | `api` | 43 | 41 | 0 (+2 skip) | ✅ |
-| **B** | `api-1.10` | 4 | 1 | 3 | ❌ NPE `FormEntrySession` |
-| **B** | `api-tests` | 529 | 457 | 71 (70 err + 1 fail) | ❌ |
+| Klasse | Tests | Status |
+|--------|-------|--------|
+| `HtmlFormEncounterControllerTest` | 7 | ✅ |
+| `HtmlFormAjaxValidationControllerTest` | 2 | ✅ |
+| `HtmlFormEntryControllerTest` | 10 | ✅ (T1–T9, characterization) |
+| **Totaal** | **19** | **✅** |
 
-**Scope B — fouten:** vrijwel allemaal NPE in `FormEntrySession.<init>`; 1 locale-failure in `HtmlFormEntryGeneratorTest`. Grootste bron: `RegressionTest` (26 errors). Niet fixen in deze sprint.
-
-**Scope A — gap:** `HtmlFormEntryControllerTest` ontbreekt nog (characterization tests vóór PoC).
+Traceability: [`03-teststrategie.md`](03-teststrategie.md) §7.4 · AI-verantwoording: [`05-verantwoording-ai-tests.md`](05-verantwoording-ai-tests.md)
 
 ---
 
-## JaCoCo (Scope A, controller-pakket)
+## JaCoCo (hotspot)
 
-| Metriek | Waarde |
-|---------|--------|
-| Controller-pakket | **16,9%** (106/626 lines) — consistent met [`onderhoudbaarheidsrapport.md`](onderhoudbaarheidsrapport.md) |
-| PoC-hotspot `HtmlFormEntryController` | **2,1%** (3/143 lines) |
-| OMOD totaal | 17,0% (106/622 lines) |
+| Metriek | Baseline | Na characterization tests |
+|---------|----------|---------------------------|
+| `HtmlFormEntryController` | 2,1% (3/143 lines) | **~53%** (76/143 lines) |
+| Controller-pakket | 16,9% | zie `omod/target/site/jacoco/` |
 
 ---
 
 ## Conclusie
 
-PoC-scope is **groen en CI-ready**; module-baseline is **rood maar gedocumenteerd**. Gerichte tests op `getFormEntrySession` zijn de juiste vervolgstap — niet 70+ regressiefouten repareren.
-
-**Volgende stap:** `HtmlFormEntryControllerTest` (P0-paden T1–T5, T7 in `03-teststrategie.md` §7.4).
+Scope A is **groen en refactor-ready**. Scope B blijft rood; dat is bewust buiten scope. **Volgende stap:** PoC Extract Class op `getFormEntrySession` met dezelfde tests als vangnet.

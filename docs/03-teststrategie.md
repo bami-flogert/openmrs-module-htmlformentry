@@ -12,6 +12,7 @@
 | Onderhoudbaarheidsrapport (baseline) | [`onderhoudbaarheidsrapport.md`](onderhoudbaarheidsrapport.md) |
 | NFRs onderhoudbaarheid | [`01-nfr-onderhoudbaarheid.md`](01-nfr-onderhoudbaarheid.md) |
 | Testresultaten baseline | [`04-testresultaten-baseline.md`](04-testresultaten-baseline.md) |
+| AI-verantwoording tests | [`05-verantwoording-ai-tests.md`](05-verantwoording-ai-tests.md) |
 | Validatie voor/na PoC | [`07-validatie-voor-na.md`](07-validatie-voor-na.md) *(nog aan te maken)* |
 
 ---
@@ -324,17 +325,17 @@ Controller-pakket (`org.openmrs.module.htmlformentry.web.controller`): **16,9%**
 
 ### 9.1 Entry criteria (start testactiviteiten)
 
-- [ ] Baseline-analyse afgerond ([`onderhoudbaarheidsrapport.md`](onderhoudbaarheidsrapport.md))
-- [ ] PoC-hotspot geprioriteerd (`getFormEntrySession`, CC 52)
-- [ ] Lokale omgeving: JDK 8, `mvn -pl omod test` draait (bestaande 9 tests groen)
+- [x] Baseline-analyse afgerond ([`onderhoudbaarheidsrapport.md`](onderhoudbaarheidsrapport.md))
+- [x] PoC-hotspot geprioriteerd (`getFormEntrySession`, CC 52)
+- [x] Lokale omgeving: JDK 8, `mvn -pl omod test` draait (19 tests groen)
 
 ### 9.2 Exit criteria (testfase afgerond)
 
-- [ ] Alle **Must**-paden (T1–T5, T7) hebben groene test + traceability-regel
-- [ ] `HtmlFormEntryControllerTest` lokaal groen via `mvn -pl omod test`
+- [x] Alle **Must**-paden (T1–T5, T7) + **Should** (T6, T8, T9) hebben groene test
+- [x] `HtmlFormEntryControllerTest` lokaal groen via `mvn -pl omod test verify`
 - [ ] CI quality-workflow groen op PR/push
-- [ ] [`04-testresultaten-baseline.md`](04-testresultaten-baseline.md) met reproduceerbare metadata en tabellen
-- [ ] JaCoCo-baseline gedocumenteerd
+- [x] [`04-testresultaten-baseline.md`](04-testresultaten-baseline.md) bijgewerkt
+- [x] JaCoCo baseline + na characterization tests gedocumenteerd
 - [ ] Regressie-subset (5 groene api-tests) gedocumenteerd
 
 ### 9.3 Pass/fail per testtype
