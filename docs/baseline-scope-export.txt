@@ -1,4 +1,4 @@
-﻿Baseline scope export
+Baseline scope export
 Generated: 2026-06-11 17:02
 Filter: *.java, exclude target/, NCLOC (SonarCloud nLines-equivalent)
 
