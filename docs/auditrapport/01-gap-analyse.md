@@ -104,7 +104,7 @@
 ### Gebreken
 
 - **Gebrek:** PII (patiëntnaam, geboortedatum, geslacht) wordt in plaintext gelogd.  
-  **Verbetering:** Vervang in `FormEntrySession.java:145-148` de volledige naam door een gepseudonimiseerde identifier (bijv. enkel `patient.getPatientId()`).
+  **Verbetering:** PoC-fix in [`08-logging.md`](../08-logging.md) — metadata-only logging (`patientId`, `userId`, `action`). Pentest: [`bevinding-hfe-04-voor.md`](../pentest/bevinding-hfe-04-voor.md) / [`bevinding-hfe-04-na.md`](../pentest/bevinding-hfe-04-na.md).
 
 - **Gebrek:** Geen logretentie- of rotatiebeleid geconfigureerd — logbestanden kunnen onbeperkt groeien of worden overschreven.  
   **Verbetering:** Voeg Log4j `RollingFileAppender` toe met retentie van minimaal 1 jaar (NEN-7510 vereiste voor medische logs).

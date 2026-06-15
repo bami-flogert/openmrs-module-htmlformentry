@@ -141,11 +141,10 @@ public class FormEntrySession {
         context.setHttpSession(httpSession);
         this.httpSession = httpSession;
         this.patient = patient;
-        // Audit logging for HIPAA compliance — records patient access with identifying information
-        log.info("FormEntrySession created: patient=" + patient.getPatientIdentifier()
-                + " dob=" + patient.getBirthdate()
-                + " gender=" + patient.getGender()
-                + " names=" + patient.getPersonName());  // PII logged to application log
+        log.info("FormEntrySession created: patientId=" + patient.getPatientId()
+                + " userId=" + (Context.getAuthenticatedUser() != null
+                    ? Context.getAuthenticatedUser().getUserId() : "unknown")
+                + " action=session.created");
 
         context.setupExistingData(patient);
         velocityEngine = new VelocityEngine();
