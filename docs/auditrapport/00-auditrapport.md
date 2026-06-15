@@ -67,6 +67,7 @@
 - CycloneDX SBOM via [`snyk.yml`](../../.github/workflows/snyk.yml) (`snyk sbom`)
 - Dependabot voor Maven, GitHub Actions en Docker ([`dependabot.yml`](../../.github/dependabot.yml))
 - Dependency review op pull requests ([`ci.yml`](../../.github/workflows/ci.yml))
+- GitHub Actions workflow-SAST via [zizmor](https://zizmor.sh/) — lokaal `zizmor .` ([`zizmor.md`](../zizmor.md))
 - Geprioriteerd patchadvies op basis van SBOM + CVE/CVSS ([`07-patchadvies.md`](07-patchadvies.md), gegenereerd via [`generate-patch-advice.py`](../../.github/scripts/generate-patch-advice.py))
 
 Zie ook bijlage B ([`02-pipeline-compliance.md`](02-pipeline-compliance.md)) en het OTAP-overzicht ([`../otap.md`](../otap.md)).
@@ -86,6 +87,7 @@ Zie ook bijlage B ([`02-pipeline-compliance.md`](02-pipeline-compliance.md)) en 
 | A | Gap-analyse | [`01-gap-analyse.md`](01-gap-analyse.md) | Aanwezig |
 | B | Mini-complianceverslag pipeline | [`02-pipeline-compliance.md`](02-pipeline-compliance.md) | Aanwezig (bijgewerkt 2026-06-09) |
 | — | OTAP-pipeline (operationeel) | [`../otap.md`](../otap.md) | Aanwezig |
+| — | GitHub Actions SAST (zizmor) | [`../zizmor.md`](../zizmor.md) | Aanwezig (baseline 2026-06-15) |
 | C | SBOM | `deploy.yml` — `build-sbom` / `otap-build-bundle` (SPDX); `snyk.yml` — `snyk-sbom.json` (CycloneDX) | ✅ Aanwezig — SPDX gekoppeld aan build-run; CycloneDX via Snyk |
 | D | SAST-output (Snyk) | `snyk.yml` artifacts `snyk-results.json`, `snyk-code-results.json` | ⚠️ Gedeeltelijk — vereist `SNYK_TOKEN`; `continue-on-error: true` |
 | E | Traceability matrix | _nog te maken_ | Te doen |
