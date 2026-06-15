@@ -25,6 +25,7 @@ De beoordeling richt zich op de **verwerkingskenmerken** van de module, niet op 
 | [`01-gap-analyse.md`](01-gap-analyse.md) | Control A.8.15 logging-bevindingen |
 | [`04-risicomatrix.md`](04-risicomatrix.md) | Dreigingen D2 (datalek) en D5 (insider-inzage) |
 | [`05-bowtie.md`](05-bowtie.md) | Hazard: verwerking bijzondere persoonsgegevens |
+| [`06-security-backlog.md`](06-security-backlog.md) | Technische kwetsbaarheden met impact op art. 9-data en logging |
 | Broncode | Bewijs van verwerkingsflow en logging |
 
 ```mermaid
@@ -153,7 +154,8 @@ De module verwerkt op structurele wijze gezondheidsgegevens (art. 9) in een zorg
 | Beschrijving verwerking | Sectie 8.2 van dit document + [`03-assets.md`](03-assets.md) |
 | Noodzaak en proportionaliteit | Organisatorisch; module biedt geen grondslagregistratie |
 | Risico's voor betrokkenen | [`04-risicomatrix.md`](04-risicomatrix.md) D2 (datalek, score 20), D5 (insider-inzage, score 12) |
-| Mitigerende maatregelen | [`01-gap-analyse.md`](01-gap-analyse.md), [`05-bowtie.md`](05-bowtie.md) preventieve barrières |
+| Technische kwetsbaarheden | [`06-security-backlog.md`](06-security-backlog.md) HFE-001 t/m HFE-005 (log4j EOL, file-upload, XSS, RCE, deserialisatie) |
+| Mitigerende maatregelen | [`01-gap-analyse.md`](01-gap-analyse.md), [`05-bowtie.md`](05-bowtie.md) preventieve barrières, [`07-patchadvies.md`](07-patchadvies.md) |
 | Logging-risico | Sectie 8.4 van dit document |
 
 ---
@@ -241,7 +243,7 @@ Bij submit-fouten worden stack traces aan de eindgebruiker getoond:
 
 **5. Geen logbeveiliging**
 
-[`01-gap-analyse.md`](01-gap-analyse.md) A.8.15 items 9–11: geen integriteitsbeveiliging, geen centrale aggregatie, geen retentie- of rotatiebeleid. Logs worden naar console geschreven (`log4j.xml`) zonder toegangscontrole op het logbestand zelf.
+[`01-gap-analyse.md`](01-gap-analyse.md) A.8.15 items 9–11: geen integriteitsbeveiliging, geen centrale aggregatie, geen retentie- of rotatiebeleid. Logs worden naar console geschreven (`log4j.xml`) zonder toegangscontrole op het logbestand zelf. Daarbovenop draait de logging-stack op **log4j 1.2.15 (end-of-life)** zonder beschikbare patches (HFE-001 in [`06-security-backlog.md`](06-security-backlog.md)): de audittrail zelf is daarmee een kwetsbaar kroonjuweel (I=5), naast het feit dat er te veel PII in wordt geschreven.
 
 ### 8.4.4 De spanning samengevat
 
@@ -277,7 +279,7 @@ Concrete codewijziging: vervang `FormEntrySession.java:145-148` door pseudonimis
 
 3. **Logging vs. privacy** — Het meest concrete technische probleem is de spanning tussen auditplicht en dataminimalisatie. De HIPAA-intentie in `FormEntrySession` botst met AVG art. 5: de module logt meer identificerende en klinische data dan noodzakelijk, terwijl de database-audittrail (`creator`/`changedBy`) al volstaat voor verantwoording.
 
-4. **Vervolgacties** — Mitigaties staan in [`01-gap-analyse.md`](01-gap-analyse.md) (items #9–13, A.8.15) en de preventieve maatregelen in [`05-bowtie.md`](05-bowtie.md). Prioriteit: pseudonimiseerde toegangslogs, DEBUG uitschakelen in productie, beveiligde log-infrastructuur.
+4. **Vervolgacties** — Mitigaties staan in [`01-gap-analyse.md`](01-gap-analyse.md) (items #9–13, A.8.15), de preventieve maatregelen in [`05-bowtie.md`](05-bowtie.md) en de geprioriteerde bevindingen in [`06-security-backlog.md`](06-security-backlog.md) (HFE-001 logging, HFE-002 upload, HFE-003 XSS). Prioriteit: pseudonimiseerde toegangslogs, DEBUG uitschakelen in productie, beveiligde log-infrastructuur, en patch van H-prioriteiten uit de security backlog.
 
 ---
 
