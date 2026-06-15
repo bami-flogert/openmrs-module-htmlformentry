@@ -1,37 +1,37 @@
 package org.openmrs.module.htmlformentry.web.controller;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.openmrs.Encounter;
 import org.openmrs.Form;
-import org.openmrs.api.FormService;
-import org.openmrs.api.context.Context;
+import org.openmrs.Patient;
 import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
-import org.openmrs.module.htmlformentry.HtmlForm;
-import org.openmrs.module.htmlformentry.HtmlFormEntryService;
-import org.openmrs.module.htmlformentry.HtmlFormEntryUtil;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.openmrs.module.htmlformentry.compatibility.EncounterServiceCompatibility;
+import org.powermock.reflect.Whitebox;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 /**
  * Unit tests for the small pieces extracted from
  * {@link HtmlFormEntryController#getFormEntrySession}.
- *
- * resolveMode() is dependency-free (no database/Spring context needed).
- * resolveHtmlFormForEncounter() calls the static service-locator methods
- * Context.getFormService() and HtmlFormEntryUtil.getService(), so PowerMock
- * is used to mock those static calls - no real database or Spring context
- * is started.
+ * <p/>
+ * These tests cover the methods that have no dependency on the static service-locators
+ * ({@code Context}, {@code HtmlFormEntryUtil}) and therefore don't need PowerMock's
+ * {@code mockStatic}. {@link Whitebox#setInternalState} is plain reflection (from
+ * powermock-reflect) and does not require {@code @RunWith(PowerMockRunner.class)}.
+ * <p/>
+ * The methods that DO call {@code Context.*} / {@code HtmlFormEntryUtil.getService()}
+ * statically are covered separately in {@link HtmlFormEntryControllerPowerMockTest}, which
+ * needs {@code @RunWith(PowerMockRunner.class)}.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(HtmlFormEntryUtil.class)
 public class HtmlFormEntryControllerTest {
 
     private final HtmlFormEntryController controller = new HtmlFormEntryController();
@@ -76,84 +76,93 @@ public class HtmlFormEntryControllerTest {
     }
 
     @Test
-    @PrepareForTest({ Context.class, HtmlFormEntryUtil.class })
-    public void resolveHtmlFormForEncounter_shouldUseFormId_whenFormIdProvided() {
-        mockStatic(Context.class);
-        mockStatic(HtmlFormEntryUtil.class);
-
-        FormService formService = mock(FormService.class);
-        HtmlFormEntryService htmlFormEntryService = mock(HtmlFormEntryService.class);
-
-        Form form = new Form();
-        form.setFormId(7);
-        HtmlForm expectedHtmlForm = new HtmlForm();
-
-        when(Context.getFormService()).thenReturn(formService);
-        when(formService.getForm(7)).thenReturn(form);
-        when(HtmlFormEntryUtil.getService()).thenReturn(htmlFormEntryService);
-        when(htmlFormEntryService.getHtmlFormByForm(form)).thenReturn(expectedHtmlForm);
-
-        HtmlForm result = controller.resolveHtmlFormForEncounter(7, new Encounter());
-
-        assertThat(result, is(expectedHtmlForm));
+    public void resolvePatient_shouldReturnNull_whenPersonIdIsNull() {
+        assertNull(controller.resolvePatient(null));
     }
 
     @Test(expected = IllegalArgumentException.class)
-    @PrepareForTest({ Context.class, HtmlFormEntryUtil.class })
-    public void resolveHtmlFormForEncounter_shouldThrow_whenFormIdProvidedButNoHtmlFormFound() {
-        mockStatic(Context.class);
-        mockStatic(HtmlFormEntryUtil.class);
+    public void resolveHtmlForm_shouldThrow_whenNeitherIdProvided() {
+        controller.resolveHtmlForm(null, null);
+    }
 
-        FormService formService = mock(FormService.class);
-        HtmlFormEntryService htmlFormEntryService = mock(HtmlFormEntryService.class);
-
-        Form form = new Form();
-        form.setFormId(7);
-
-        when(Context.getFormService()).thenReturn(formService);
-        when(formService.getForm(7)).thenReturn(form);
-        when(HtmlFormEntryUtil.getService()).thenReturn(htmlFormEntryService);
-        when(htmlFormEntryService.getHtmlFormByForm(form)).thenReturn(null);
-
-        controller.resolveHtmlFormForEncounter(7, new Encounter());
+    @Test(expected = IllegalArgumentException.class)
+    public void resolveWhichEncounter_shouldThrow_whenPatientIsNull() {
+        controller.resolveWhichEncounter("first", null, new Form());
     }
 
     @Test
-    public void resolveHtmlFormForEncounter_shouldUseEncounterForm_whenFormIdNotProvided() {
-        mockStatic(HtmlFormEntryUtil.class);
+    public void resolveWhichEncounter_shouldReturnFirstEncounter_whenWhichIsFirst() {
+        Patient patient = new Patient();
+        Form form = new Form();
+        Encounter first = new Encounter();
+        Encounter last = new Encounter();
+        List<Encounter> encs = Arrays.asList(first, last);
 
-        HtmlFormEntryService htmlFormEntryService = mock(HtmlFormEntryService.class);
+        EncounterServiceCompatibility encounterServiceCompatibility = mock(EncounterServiceCompatibility.class);
+        when(encounterServiceCompatibility.getEncounters(patient, null, null, null,
+                java.util.Collections.singleton(form), null, null, null, null, false)).thenReturn(encs);
+        Whitebox.setInternalState(controller, "encounterServiceCompatibility", encounterServiceCompatibility);
 
-        Form encounterForm = new Form();
-        encounterForm.setFormId(3);
-        HtmlForm expectedHtmlForm = new HtmlForm();
+        Encounter result = controller.resolveWhichEncounter("first", patient, form);
 
-        Encounter encounter = new Encounter();
-        encounter.setForm(encounterForm);
+        assertThat(result, is(first));
+    }
 
-        when(HtmlFormEntryUtil.getService()).thenReturn(htmlFormEntryService);
-        when(htmlFormEntryService.getHtmlFormByForm(encounterForm)).thenReturn(expectedHtmlForm);
+    @Test
+    public void resolveWhichEncounter_shouldReturnLastEncounter_whenWhichIsLast() {
+        Patient patient = new Patient();
+        Form form = new Form();
+        Encounter first = new Encounter();
+        Encounter last = new Encounter();
+        List<Encounter> encs = Arrays.asList(first, last);
 
-        HtmlForm result = controller.resolveHtmlFormForEncounter(null, encounter);
+        EncounterServiceCompatibility encounterServiceCompatibility = mock(EncounterServiceCompatibility.class);
+        when(encounterServiceCompatibility.getEncounters(patient, null, null, null,
+                java.util.Collections.singleton(form), null, null, null, null, false)).thenReturn(encs);
+        Whitebox.setInternalState(controller, "encounterServiceCompatibility", encounterServiceCompatibility);
 
-        assertThat(result, is(expectedHtmlForm));
+        Encounter result = controller.resolveWhichEncounter("last", patient, form);
+
+        assertThat(result, is(last));
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void resolveHtmlFormForEncounter_shouldThrow_whenFormIdNotProvidedAndEncounterFormHasNoHtmlForm() {
-        mockStatic(HtmlFormEntryUtil.class);
+    public void resolveWhichEncounter_shouldThrow_whenWhichIsNotFirstOrLast() {
+        Patient patient = new Patient();
+        Form form = new Form();
 
-        HtmlFormEntryService htmlFormEntryService = mock(HtmlFormEntryService.class);
+        EncounterServiceCompatibility encounterServiceCompatibility = mock(EncounterServiceCompatibility.class);
+        when(encounterServiceCompatibility.getEncounters(patient, null, null, null,
+                java.util.Collections.singleton(form), null, null, null, null, false)).thenReturn(Arrays.asList(new Encounter()));
+        Whitebox.setInternalState(controller, "encounterServiceCompatibility", encounterServiceCompatibility);
 
-        Form encounterForm = new Form();
-        encounterForm.setFormId(3);
+        controller.resolveWhichEncounter("middle", patient, form);
+    }
 
-        Encounter encounter = new Encounter();
-        encounter.setForm(encounterForm);
+    @Test
+    public void resolvePatientForSession_shouldReturnGivenPatient_whenPatientIsNotNull() {
+        Patient patient = new Patient();
 
-        when(HtmlFormEntryUtil.getService()).thenReturn(htmlFormEntryService);
-        when(htmlFormEntryService.getHtmlFormByForm(encounterForm)).thenReturn(null);
+        Patient result = controller.resolvePatientForSession(patient, Mode.VIEW, 1, 2);
 
-        controller.resolveHtmlFormForEncounter(null, encounter);
+        assertThat(result, is(patient));
+    }
+
+    @Test
+    public void resolvePatientForSession_shouldCreateNewPatient_whenEnterModeAndNoPatient() {
+        Patient result = controller.resolvePatientForSession(null, Mode.ENTER, null, null);
+
+        assertNotNull(result);
+        assertNull(result.getPatientId());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void resolvePatientForSession_shouldThrow_whenNotEnterModeAndNoPatient() {
+        controller.resolvePatientForSession(null, Mode.VIEW, 1, 2);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void resolvePatientForSession_shouldThrow_whenEditModeAndNoPatient() {
+        controller.resolvePatientForSession(null, Mode.EDIT, null, 2);
     }
 }
