@@ -15,10 +15,24 @@ jobs:
       contents: read
 
     steps:
+      - name: Check SNYK_TOKEN
+        id: snyk-enabled
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          if [ -z "$SNYK_TOKEN" ]; then
+            echo "Snyk skipped: SNYK_TOKEN not configured"
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Checkout code
+        if: steps.snyk-enabled.outputs.enabled == 'true'
         uses: actions/checkout@v4
 
       - name: Set up JDK 8
+        if: steps.snyk-enabled.outputs.enabled == 'true'
         uses: actions/setup-java@v4
         with:
           java-version: '8'
@@ -27,12 +41,15 @@ jobs:
 
       # Snyk heeft een geresolvede dependency-tree nodig voor Maven-projecten
       - name: Resolve Maven dependencies
+        if: steps.snyk-enabled.outputs.enabled == 'true'
         run: mvn -B install --file pom.xml -DskipTests
 
       - name: Set up Snyk CLI
+        if: steps.snyk-enabled.outputs.enabled == 'true'
         uses: snyk/actions/setup@9adf32b1121593767fc3c057af55b55db032dc04
 
       - name: Snyk test (SCA)
+        if: steps.snyk-enabled.outputs.enabled == 'true'
         run: snyk test --all-projects --json-file-output=snyk-results.json
         continue-on-error: true
         env:
@@ -40,6 +57,7 @@ jobs:
 
       # SAST: scant eigen broncode op kwetsbare code-patronen
       - name: Snyk code test (SAST)
+        if: steps.snyk-enabled.outputs.enabled == 'true'
         run: snyk code test --json-file-output=snyk-code-results.json
         continue-on-error: true
         env:
@@ -47,6 +65,7 @@ jobs:
 
       # SBOM in CycloneDX JSON-formaat
       - name: Snyk SBOM
+        if: steps.snyk-enabled.outputs.enabled == 'true'
         run: snyk sbom --all-projects --format=cyclonedx1.4+json > snyk-sbom.json
         continue-on-error: true
         env:
@@ -72,6 +91,7 @@ jobs:
 
       # Ruwe output opslaan als artifact (bewijs voor het auditrapport)
       - name: Upload Snyk results
+        if: steps.snyk-enabled.outputs.enabled == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: snyk-results

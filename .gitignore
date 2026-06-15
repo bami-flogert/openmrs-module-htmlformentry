@@ -2,6 +2,7 @@
 .project
 .settings/*
 target/*
+**/target/
 api/.classpath
 api/.project
 api/.settings/*

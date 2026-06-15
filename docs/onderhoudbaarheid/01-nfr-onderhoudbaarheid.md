@@ -112,10 +112,10 @@ Gerefactorde code moet testbaar zijn en gedekt door geautomatiseerde tests.
 **Meetbaar (JaCoCo + SonarCloud):**
 
 - **≥ 60% line coverage** in PoC-scope (koppeling met **NFR-T1**)
-- Bestaande tests blijven groen (`mvn test` in CI)
+- PoC-scope tests blijven groen in CI (`mvn -B -pl omod test verify`)
 - Nieuwe of uitgebreide unit tests voor geëxtraheerde logica
 
-**Scope:** PoC-scope
+**Scope:** PoC-scope (OMOD)
 
 ---
 
@@ -127,9 +127,9 @@ De pipeline moet merges blokkeren wanneer onderhoudbaarheidsdrempels niet worden
 
 **Meetbaar (SonarCloud Quality Gate):**
 
-- Quality Gate **Passed** vereist voor merge naar `development` / `pre-release` / `main`
+- Quality Gate **Passed** vereist voor merge naar `development` / `pre-release` / `main` (via branch protection op de SonarCloud PR-check)
 - Drempels in SonarCloud afgestemd op NFR-M1 t/m M5 (minimaal: geen new blocker/critical bugs, geen new critical smells, coverage on new code ≥ drempel)
-- `sonar.qualitygate.wait=true` in CI-workflow
+- SonarCloud draait via de **GitHub App-integratie** (PR-check “SonarCloud Code Analysis”); er is geen `sonar-maven-plugin` of `sonar.qualitygate.wait` in een repository-workflow
 
 **Scope:** module-breed · New Code policy voor PRs
 
@@ -143,11 +143,11 @@ Elke wijziging wordt automatisch geanalyseerd; handmatige kwaliteitscontrole all
 
 **Meetbaar:**
 
-- **100%** pull requests triggeren SonarCloud-analyse
+- **100%** pull requests triggeren SonarCloud-analyse (GitHub App)
 - Analyse-resultaat (Quality Gate + link) zichtbaar in PR-checks
 - Baseline-analyse op `main` minimaal één keer per sprint opnieuw vastgelegd
 
-**Scope:** CI/CD (GitHub Actions)
+**Scope:** SonarCloud GitHub App (geen aparte workflow in `.github/workflows/`)
 
 ---
 
@@ -175,7 +175,7 @@ Kwaliteitsbevindingen en refactorkeuzes zijn traceerbaar naar metrieken en code-
 | M2    | Duplicated Lines (%)                | Geen verslechtering (ratchet)    |
 | M4    | Code Smells, Maintainability Rating | 0 new blocker/critical smells    |
 | M5    | Coverage, JaCoCo-report             | ≥ 60% on new code (PoC-fase)     |
-| M6/M7 | Overall Quality Gate                | Fail CI bij Failed               |
+| M6/M7 | Overall Quality Gate                | Fail merge via branch protection op SonarCloud-check |
 
 ---
 
@@ -184,10 +184,10 @@ Kwaliteitsbevindingen en refactorkeuzes zijn traceerbaar naar metrieken en code-
 Het team voldoet aan deze NFR-set wanneer:
 
 1. Baseline-metrieken op volledige module zijn vastgelegd.
-2. SonarCloud Quality Gate actief is in CI en merges kan blokkeren.
+2. SonarCloud Quality Gate actief via GitHub App; merge blokkeerbaar via branch protection.
 3. Minimaal **één** PoC-refactoring in PoC-scope is uitgevoerd conform ontwerp.
 4. Voor/na-metrieken aantonen dat minimaal **NFR-M1, M3 en M4** zijn verbeterd of gehaald in PoC-scope.
-5. Tests draaien groen in CI; coverage in PoC-scope is gemeten en gedocumenteerd.
+5. PoC-scope tests draaien groen in CI; coverage in PoC-scope is gemeten en gedocumenteerd.
 
 ---
 
