@@ -89,11 +89,12 @@ Zie ook bijlage B ([`02-pipeline-compliance.md`](02-pipeline-compliance.md)) en 
 | C | SBOM | `deploy.yml` — `build-sbom` / `otap-build-bundle` (SPDX); `snyk.yml` — `snyk-sbom.json` (CycloneDX) | ✅ Aanwezig — SPDX gekoppeld aan build-run; CycloneDX via Snyk |
 | D | SAST-output (Snyk) | `snyk.yml` artifacts `snyk-results.json`, `snyk-code-results.json` | ⚠️ Gedeeltelijk — vereist `SNYK_TOKEN`; `continue-on-error: true` |
 | E | Traceability matrix | _nog te maken_ | Te doen |
-| F | Risicomatrix | _nog te maken_ | Te doen |
-| G | Bow-tie / threat model | _nog te maken_ | Te doen |
+| F | Risicomatrix | [`04-risicomatrix.md`](04-risicomatrix.md) (`risicomatrix.png`) | Aanwezig |
+| G | Bow-tie / threat model | [`05-bowtie.md`](05-bowtie.md) (`bowtie-*.png`) | Aanwezig |
 | H | CRA-mapping | _nog te maken_ | Te doen |
-| I | Security backlog / verbeteraanpak | _nog te maken_ | Te doen |
+| I | Security backlog / verbeteraanpak | [`06-security-backlog.md`](06-security-backlog.md) | Aanwezig (2026-06-11) |
 | J | Patchadvies (SBOM/CVE) | [`07-patchadvies.md`](07-patchadvies.md) | Aanwezig — gegenereerd via Snyk + [`generate-patch-advice.py`](../../.github/scripts/generate-patch-advice.py) |
+| K | DPIA-check (AVG art. 9/35) | [`08-dpia-check.md`](08-dpia-check.md) | Aanwezig (2026-06-15) |
 
 ---
 
