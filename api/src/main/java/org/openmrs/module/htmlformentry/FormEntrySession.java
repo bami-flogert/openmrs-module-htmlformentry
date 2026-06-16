@@ -732,6 +732,15 @@ public class FormEntrySession {
             }
         }
 
+        log.info("Form submission completed: patientId="
+                + (patient != null ? patient.getPatientId() : "none")
+                + " userId=" + (Context.getAuthenticatedUser() != null
+                    ? Context.getAuthenticatedUser().getUserId() : "unknown")
+                + " htmlFormId=" + getHtmlFormId()
+                + " encounterId=" + (encounter != null ? encounter.getEncounterId() : "none")
+                + " mode=" + context.getMode()
+                + " action=submit.success");
+
     }
 
     /**
