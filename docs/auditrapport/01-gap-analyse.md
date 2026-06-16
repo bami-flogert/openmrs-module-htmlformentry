@@ -89,22 +89,22 @@
 |---|--------|--------|--------------------------------------------------------------------------------------------------------------------------------------------|
 | 1 | Logging framework geconfigureerd | ✅ Aanwezig | `api/src/main/resources/log4j.xml:6-16` — Log4j met CONSOLE-appender, ISO8601-tijdstempel, methodepatroon                                  |
 | 2 | Logger aanwezig in kernklassen | ✅ Aanwezig | `FormEntrySession.java:79`, `FormSubmissionController.java:31`, `HtmlFormEntryServiceImpl.java:44`, `HtmlFormEntryController.java:54`      |
-| 3 | Toegangslogging bij patiëntgegevens | ✅ Aanwezig | `FormEntrySession.java:145-148` — logt patiënt-ID, geboortedatum, geslacht en naam bij elke formuliersessie                                |
+| 3 | Toegangslogging bij patiëntgegevens | ✅ Aanwezig | `FormEntrySession.java` — metadata-only INFO bij sessie-start (`action=session.created`) en succesvolle submit (`action=submit.success`); zie [`08-logging.md`](../08-logging.md) |
 | 4 | Foutlogging bij formulierverwerking | ✅ Aanwezig | `HtmlFormEntryController.java:285,323,329` — `log.error` bij validatie-, invoer- en verzendfouten                                          |
 | 5 | Audittrail via creator/changedBy op data | ✅ Aanwezig | `HtmlFormEntryServiceImpl.java:120,124` — `setCreator` / `setChangedBy` met ingelogde gebruiker                                            |
 | 6 | Audittrail bij void-acties | ✅ Aanwezig | `FormEntrySession.java:660` — `log.debug("voiding obs: " + o.getObsId())` en `FormSubmissionActions.java:320`                              |
-| 7 | Wijzigingsregistratie | ✅ Aanwezig | `FormSubmissionActions.java:335` — logt `oldString + " -> " + newString` per concept                                                       |
+| 7 | Wijzigingsregistratie | ✅ Aanwezig | `FormSubmissionActions.java` — DEBUG logt alleen `obsId`/`conceptId` (geen klinische waarden); standaard uitgeschakeld door INFO-default in `log4j.xml` |
 | 8 | Creator-tracking op orders en programma-inschrijvingen | ✅ Aanwezig | `FormSubmissionActions.java:511,533`, `DrugOrderSubmissionElement.java:622,653`                                                            |
 | 9 | Logbescherming | ❌ Afwezig | Logbestanden worden naar console/file geschreven zonder integriteitsbeveiliging                                                            |
 | 10 | Gecentraliseerde log-aggregatie | ❌ Afwezig | Geen koppeling met externe logging-systemen                                                                                                |
 | 11 | Retentiebeleid voor logbestanden | ❌ Afwezig | Log4j-configuratie stelt geen rotatie of retentietermijn in                                                                                |
 | 12 | Beveiligingsgebeurtenissen apart gelogd | ⚠️ Gedeeltelijk | Beveiligingsgebeurtenissen worden niet apart gecategoriseerd — alles gaat naar dezelfde logger                                             |
-| 13 | Logging van PII conform AVG/NEN-7510 | ⚠️ Gedeeltelijk | `FormEntrySession.java:145-148` logt patiëntnaam, geboortedatum en geslacht in plaintext — dit is AVG die beschermd opgeslagen moet worden |
+| 13 | Logging van PII conform AVG/NEN-7510 | ⚠️ Gedeeltelijk | INFO-paden PoC-fix (geen namen/dob/gender); rest-risico: `HtmlFormEntryUtil.java:327` logt volledige XML op ERROR |
 
 ### Gebreken
 
-- **Gebrek:** PII (patiëntnaam, geboortedatum, geslacht) wordt in plaintext gelogd.  
-  **Verbetering:** PoC-fix in [`08-logging.md`](../08-logging.md) — metadata-only logging (`patientId`, `userId`, `action`). Pentest: [`bevinding-hfe-04-voor.md`](../pentest/bevinding-hfe-04-voor.md) / [`bevinding-hfe-04-na.md`](../pentest/bevinding-hfe-04-na.md).
+- **Gebrek (opgelost in PoC):** PII (patiëntnaam, geboortedatum, geslacht) werd in plaintext gelogd op INFO.  
+  **Mitigatie:** metadata-only logging in [`08-logging.md`](../08-logging.md) — `session.created` en `submit.success`. Pentest: [`bevinding-hfe-04-voor.md`](../pentest/bevinding-hfe-04-voor.md) / [`bevinding-hfe-04-na.md`](../pentest/bevinding-hfe-04-na.md).
 
 - **Gebrek:** Geen logretentie- of rotatiebeleid geconfigureerd — logbestanden kunnen onbeperkt groeien of worden overschreven.  
   **Verbetering:** Voeg Log4j `RollingFileAppender` toe met retentie van minimaal 1 jaar (NEN-7510 vereiste voor medische logs).
@@ -120,4 +120,4 @@
 |---------|--------|-----------------|
 | A.8.3 Toegangsbeveiliging | ⚠️ Gedeeltelijk | Ontbrekende `@Authorized` op service-laag; geen privilege-matrix |
 | A.8.5 Authenticatie | ⚠️ Gedeeltelijk | Geen CSRF-bescherming; sessiebeheer niet modulespecifiek geconfigureerd |
-| A.8.15 Logging | ⚠️ Gedeeltelijk | PII in plaintext in logs; geen retentiebeleid; geen log-integriteitsbeveiliging |
+| A.8.15 Logging | ⚠️ Gedeeltelijk | Geen retentiebeleid; geen log-integriteitsbeveiliging; geen dedicated security logger; rest-risico XML in ERROR-log |
