@@ -95,10 +95,10 @@ Trigger: `pull_request` naar `development`, `pre-release`, `acceptatie` of `main
 | Job | Doel |
 |-----|------|
 | `build` | Compileert en bouwt OMOD |
-| `unit-test` | PoC-scope tests + JaCoCo (`mvn -pl omod test verify`) |
+| `unit-test` | PoC-scope OMOD tests + JaCoCo (`mvn -pl omod test verify`) |
 | `dependency-review` | Controle op kwetsbare nieuwe dependencies |
 | `zizmor` | GitHub Actions workflow-security (SAST); `continue-on-error` tot baseline is opgelost |
-| `sonarcloud` | SonarCloud-analyse + quality gate (`sonar:sonar`, `sonar.qualitygate.wait=true`) |
+| `sonarcloud` | Uitgebreide tests incl. logging audit (`api`, `api-tests`, `omod`) + SonarCloud quality gate |
 
 Setup en secrets: [`sonarcloud-setup.md`](sonarcloud-setup.md).
 

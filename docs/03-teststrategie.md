@@ -13,6 +13,7 @@
 | NFRs onderhoudbaarheid | [`01-nfr-onderhoudbaarheid.md`](01-nfr-onderhoudbaarheid.md) |
 | Testresultaten baseline | [`04-testresultaten-baseline.md`](04-testresultaten-baseline.md) |
 | AI-verantwoording tests | [`05-verantwoording-ai-tests.md`](05-verantwoording-ai-tests.md) |
+| Logging (security) | [`08-logging.md`](08-logging.md) |
 | Validatie voor/na PoC | [`07-validatie-voor-na.md`](07-validatie-voor-na.md) *(nog aan te maken)* |
 
 ---
@@ -126,22 +127,26 @@ Dekking wordt bepaald op basis van **geprioriteerde hotspots**, niet op een blan
 | **Testframework** | JUnit 4, Spring Test (`MockHttpServletRequest`) |
 | **Mocking** | Mockito (unit tests) |
 | **Testdata** | OpenMRS module-datasets (`BaseModuleContextSensitiveTest`) |
-| **Coverage** | JaCoCo — rapport: `omod/target/site/jacoco/` |
-| **CI** | GitHub Actions (dedicated quality-workflow, zie §8) |
+| **Coverage** | JaCoCo — rapporten: `api/target/site/jacoco/`, `api-tests/target/site/jacoco/`, `omod/target/site/jacoco/` (SonarCloud aggregeert alle drie) |
+| **CI** | GitHub Actions `ci.yml` — zie §8 |
 | **OS** | Windows 11 (lokaal) / `ubuntu-latest` (CI) |
 
 ### Reproduceerbare commando's
 
 ```bash
-# PoC-testscope: tests + JaCoCo
-mvn -pl omod test verify
+# PoC-testscope + logging audit tests + JaCoCo (zoals CI)
+mvn -B -pl api,api-tests,omod -am test verify
+
+# Alleen formatter unit tests
+mvn -pl api -Dtest=FormEntryAuditLogFormatterTest test
 
 # Module-baseline (verwacht deels rood)
 mvn -pl api,api-tests test
 
-# Coverage controller-pakket bekijken
-# Rapport: omod/target/site/jacoco/index.html
-# CSV:     omod/target/site/jacoco/jacoco.csv
+# Coverage rapporten
+# api/target/site/jacoco/index.html
+# api-tests/target/site/jacoco/index.html
+# omod/target/site/jacoco/index.html
 ```
 
 ---
@@ -155,7 +160,7 @@ mvn -pl api,api-tests test
 | `HtmlFormEntryController.getFormEntrySession` | Nieuwe characterization tests (6–8 scenario's) |
 | Bestaande OMOD-tests | Behouden en documenteren (9 tests, groen) |
 | JaCoCo PoC-pakket | Meten en rapporteren als baseline |
-| CI quality-workflow | `mvn -pl omod test verify` op PR/push |
+| CI quality-workflow | `unit-test`: `omod`; `sonarcloud`: `api,api-tests,omod` (zie `ci.yml`) |
 | Regressie-subset | 5 representatieve groene tests uit `api-tests` documenteren |
 | Geëxtraheerde klassen (na PoC) | Optioneel: unit tests met 100% dekking |
 
@@ -268,38 +273,33 @@ Selecteer **5 bestaande groene tests** uit `api-tests` die het domein "form entr
 
 **Actie:** draai `mvn -pl api-tests test`, exporteer groene klassen, kies de 5 meest relevante voor form-entry. Resultaat documenteren in [`04-testresultaten-baseline.md`](04-testresultaten-baseline.md).
 
+### 7.6 Logging audit tests (security PoC)
+
+Automated checks voor metadata-only audit logging (NFR-S1/S2). Traceability naar [`08-logging.md`](08-logging.md) §Validatie.
+
+| Test | Type | Bewijst | Commando |
+|------|------|---------|----------|
+| `FormEntryAuditLogFormatterTest` | Unit (`api`) | Logberichten bevatten alleen numerieke IDs; geen PII-patronen; null → `none` | `mvn -pl api -Dtest=FormEntryAuditLogFormatterTest test` |
+| `FormEntrySessionLoggingTest` | Integratie (`api`) | Null-patiënt sessie-pad zonder NPE (log niet geasserteerd) | `mvn -pl api -Dtest=FormEntrySessionLoggingTest test` |
+| `FormEntrySessionTest` | Integratie (`api-tests`) | Sessie-start smoke; console kan `session.created` tonen | `mvn -pl api-tests -Dtest=FormEntrySessionTest test` |
+| `PostSubmissionActionTagTest` | Integratie (`api-tests`) | Submit smoke; console kan `submit.success` tonen | `mvn -pl api-tests -Dtest=PostSubmissionActionTagTest test` |
+
+SonarCloud new-code coverage: formatter-unit tests + integratietests via **`sonarcloud`**-job in CI (`api`, `api-tests`, `omod` JaCoCo-reports). De aparte `unit-test`-job draait alleen `omod`.
+
 ---
 
 ## 8. CI en reproduceerbaarheid
 
-### 8.1 Quality-workflow
+### 8.1 CI (`.github/workflows/ci.yml`)
 
-Aparte CI-job voor PoC-testscope (voorstel: `.github/workflows/quality.yml`), los van `deploy.yml` dat met `-DskipTests` bouwt.
+Twee relevante jobs:
 
-```yaml
-on:
-  pull_request:
-  push:
-    branches: [development, pre-release]
+| Job | Maven-commando | Dekking |
+|-----|----------------|---------|
+| `unit-test` | `mvn -B -pl omod test verify` | OMOD PoC-scope (controllers) |
+| `sonarcloud` | `mvn -B -pl api,api-tests,omod -am test verify` | OMOD + **logging audit tests** (`FormEntryAuditLogFormatterTest`, `FormEntrySessionLoggingTest`, `FormEntrySessionTest`, `PostSubmissionActionTagTest`) + JaCoCo voor SonarCloud |
 
-jobs:
-  test-poc-scope:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          java-version: '8'
-          distribution: 'temurin'
-          cache: maven
-      - name: PoC-scope tests + JaCoCo
-        run: mvn -B -pl omod test verify
-      - name: Upload JaCoCo report
-        uses: actions/upload-artifact@v4
-        with:
-          name: jacoco-omod
-          path: omod/target/site/jacoco/
-```
+SonarCloud aggregeert JaCoCo uit `api`, `api-tests` en `omod` (`pom.xml` / `sonar-project.properties`).
 
 ### 8.2 Metadata per testrun
 
@@ -310,7 +310,7 @@ Elk testrapport bevat minimaal:
 | Git commit | `c67d09b` |
 | Datum/tijd | 2026-06-15T09:00 |
 | JDK | Temurin 8 |
-| Maven-commando | `mvn -pl omod test verify` |
+| Maven-commando | `mvn -B -pl api,api-tests,omod -am test verify` |
 | OS | Windows 11 / `ubuntu-latest` |
 | CI-run URL | GitHub Actions run #… |
 | Artifact | `jacoco-omod.zip` |
@@ -358,7 +358,7 @@ Controller-pakket (`org.openmrs.module.htmlformentry.web.controller`): **16,9%**
 | Testresultaten baseline | `docs/04-testresultaten-baseline.md` | Na testuitvoering |
 | Testresultaten na PoC | `docs/07-validatie-voor-na.md` (sectie tests) | Validatiefase |
 | Nieuwe testklasse | `omod/src/test/java/.../HtmlFormEntryControllerTest.java` | Testfase |
-| CI quality-workflow | `.github/workflows/quality.yml` | Testfase |
+| CI quality-workflow | `.github/workflows/ci.yml` (unit-test job) | Testfase |
 | JaCoCo-artifact | CI artifact of screenshot in `docs/` | Testfase |
 
 ---
@@ -391,4 +391,4 @@ Controller-pakket (`org.openmrs.module.htmlformentry.web.controller`): **16,9%**
 
 De teststrategie richt zich op de **PoC-hotspot** in OMOD: `HtmlFormEntryController.getFormEntrySession`. Door characterization tests te schrijven vóór de geplande Extract Class-refactor leggen we gedrag vast, beperken we regressierisico en maken we de refactor valideerbaar.
 
-We combineren **meerdere testtypen** (unit, component, regressie-subset, coverage, SAST) binnen een **afgebakende, reproduceerbare scope** (`mvn -pl omod test verify` + dedicated CI). Module-brede instabiliteit documenteren we als baseline-context, zonder dat te verwarren met het primaire testdoel.
+We combineren **meerdere testtypen** (unit, component, regressie-subset, coverage, SAST) binnen een **afgebakende, reproduceerbare scope** (`unit-test` + `sonarcloud` in CI). Module-brede instabiliteit documenteren we als baseline-context, zonder dat te verwarren met het primaire testdoel.
