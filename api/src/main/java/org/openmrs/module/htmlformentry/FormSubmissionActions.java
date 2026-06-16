@@ -634,7 +634,8 @@ public class FormSubmissionActions {
 	}
 	
 	private String printObsHelper(Obs obs) {
-		return "obsId=" + obs.getObsId() + " conceptId=" + obs.getConcept().getConceptId();
+		Integer conceptId = obs.getConcept() != null ? obs.getConcept().getConceptId() : null;
+		return FormEntryAuditLogFormatter.formatObsReference(obs.getObsId(), conceptId);
 	}
 	
 	/**

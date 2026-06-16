@@ -33,6 +33,23 @@ public final class FormEntryAuditLogFormatter {
 		return sb.toString();
 	}
 
+	public static String formatObsReference(Integer obsId, Integer conceptId) {
+		StringBuilder sb = new StringBuilder(32);
+		sb.append("obsId=");
+		if (obsId != null) {
+			sb.append(obsId.intValue());
+		} else {
+			sb.append("none");
+		}
+		sb.append(" conceptId=");
+		if (conceptId != null) {
+			sb.append(conceptId.intValue());
+		} else {
+			sb.append("none");
+		}
+		return sb.toString();
+	}
+
 	public static String formatObsDatetimeDebugMessage(Obs obs) {
 		StringBuilder sb = new StringBuilder(64);
 		sb.append("Set obsDatetime for obsId=");

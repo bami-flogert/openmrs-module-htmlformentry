@@ -81,4 +81,45 @@ public class FormEntryAuditLogFormatterTest {
 		assertThat(msg, is("voiding relationship relationshipTypeId=none relationshipId=9"));
 	}
 
+	@Test
+	public void formatRelationshipDebugMessage_shouldHandleAllNullIds() {
+		String msg = FormEntryAuditLogFormatter.formatRelationshipDebugMessage("editing", null, null);
+		assertThat(msg, is("editing relationship relationshipTypeId=none relationshipId=none"));
+	}
+
+	@Test
+	public void formatObsReference_shouldUseMetadataOnly() {
+		assertThat(FormEntryAuditLogFormatter.formatObsReference(1, 3), is("obsId=1 conceptId=3"));
+		assertThat(FormEntryAuditLogFormatter.formatObsReference(null, null), is("obsId=none conceptId=none"));
+	}
+
+	@Test
+	public void formatObsDatetimeDebugMessage_shouldHandleNullObsId() {
+		Obs obs = new Obs();
+		obs.setConcept(new Concept(7));
+		String msg = FormEntryAuditLogFormatter.formatObsDatetimeDebugMessage(obs);
+		assertThat(msg, is("Set obsDatetime for obsId=none conceptId=7"));
+	}
+
+	@Test
+	public void formatObsDatetimeDebugMessage_shouldHandleNullConcept() {
+		Obs obs = new Obs();
+		obs.setObsId(1);
+		String msg = FormEntryAuditLogFormatter.formatObsDatetimeDebugMessage(obs);
+		assertThat(msg, is("Set obsDatetime for obsId=1 conceptId=none"));
+	}
+
+	@Test
+	public void appendAuditField_shouldAppendNumericValue() {
+		StringBuilder sb = new StringBuilder();
+		FormEntryAuditLogFormatter.appendAuditField(sb, "htmlFormId", 5);
+		assertThat(sb.toString(), is(" htmlFormId=5"));
+	}
+
+	@Test
+	public void safeModeName_shouldReturnModeName() {
+		assertThat(FormEntryAuditLogFormatter.safeModeName(Mode.EDIT), is("EDIT"));
+		assertThat(FormEntryAuditLogFormatter.safeModeName(Mode.VIEW), is("VIEW"));
+	}
+
 }

@@ -276,6 +276,7 @@ Automated checks voor metadata-only audit logging (NFR-S1/S2). Traceability naar
 | Test | Type | Bewijst | Commando |
 |------|------|---------|----------|
 | `FormEntryAuditLogFormatterTest` | Unit (`api`) | Logberichten bevatten alleen numerieke IDs; geen PII-patronen; null → `none` | `mvn -pl api -Dtest=FormEntryAuditLogFormatterTest test` |
+| `FormEntrySessionLoggingTest` | Integratie (`api`) | `session.created` met `patientId=none` (null-patiënt pad) | `mvn -pl api -Dtest=FormEntrySessionLoggingTest test` |
 | `FormEntrySessionTest` | Integratie (`api-tests`) | `action=session.created` bij sessie-start | `mvn -pl api-tests -Dtest=FormEntrySessionTest test` |
 | `PostSubmissionActionTagTest` | Integratie (`api-tests`) | `action=submit.success` na `applyActions()` | `mvn -pl api-tests -Dtest=PostSubmissionActionTagTest test` |
 
