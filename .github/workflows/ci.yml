@@ -91,7 +91,7 @@ jobs:
       - name: Build and run PoC-scope tests
         run: |
           mvn -B package --file pom.xml -DskipTests
-          mvn -B -pl omod test verify --file pom.xml
+          mvn -B -pl api,api-tests,omod -am test verify --file pom.xml
 
       - name: Set up JDK 17 for SonarScanner
         uses: actions/setup-java@v4

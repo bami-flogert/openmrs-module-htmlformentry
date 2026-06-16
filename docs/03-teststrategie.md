@@ -269,6 +269,18 @@ Selecteer **5 bestaande groene tests** uit `api-tests` die het domein "form entr
 
 **Actie:** draai `mvn -pl api-tests test`, exporteer groene klassen, kies de 5 meest relevante voor form-entry. Resultaat documenteren in [`04-testresultaten-baseline.md`](04-testresultaten-baseline.md).
 
+### 7.6 Logging audit tests (security PoC)
+
+Automated checks voor metadata-only audit logging (NFR-S1/S2). Traceability naar [`08-logging.md`](08-logging.md) §Validatie.
+
+| Test | Type | Bewijst | Commando |
+|------|------|---------|----------|
+| `FormEntryAuditLogFormatterTest` | Unit (`api`) | Logberichten bevatten alleen numerieke IDs; geen PII-patronen; null → `none` | `mvn -pl api -Dtest=FormEntryAuditLogFormatterTest test` |
+| `FormEntrySessionTest` | Integratie (`api-tests`) | `action=session.created` bij sessie-start | `mvn -pl api-tests -Dtest=FormEntrySessionTest test` |
+| `PostSubmissionActionTagTest` | Integratie (`api-tests`) | `action=submit.success` na `applyActions()` | `mvn -pl api-tests -Dtest=PostSubmissionActionTagTest test` |
+
+SonarCloud new-code coverage: formatter-unit tests + integratietests via CI (`api`, `api-tests`, `omod` JaCoCo-reports).
+
 ---
 
 ## 8. CI en reproduceerbaarheid

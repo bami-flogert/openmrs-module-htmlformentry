@@ -206,7 +206,7 @@
 		<sonar.projectKey>bami-flogert_openmrs-module-htmlformentry</sonar.projectKey>
 		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
 		<sonar.exclusions>.github/**,**/target/**,**/*.min.js</sonar.exclusions>
-		<sonar.coverage.jacoco.xmlReportPaths>omod/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+		<sonar.coverage.jacoco.xmlReportPaths>omod/target/site/jacoco/jacoco.xml,api/target/site/jacoco/jacoco.xml,api-tests/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 
 	<modules>
