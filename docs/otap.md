@@ -17,6 +17,7 @@
 | [`module-keuze.md`](module-keuze.md) | Motivatie modulekeuze en NEN-7510-relevantie |
 | [`onderhoudbaarheid/01-nfr-onderhoudbaarheid.md`](onderhoudbaarheid/01-nfr-onderhoudbaarheid.md) | JaCoCo-coverage en quality gates (NFR-M5 / NFR-T1) |
 | [`security.md`](security.md) | Vulnerability disclosure policy |
+| [`zizmor.md`](zizmor.md) | Lokale SAST-scan van GitHub Actions-workflows |
 
 Dit document beschrijft de **operationele OTAP-keten**: welke branches naar welke omgeving deployen, welke quality gates gelden en welke workflows betrokken zijn. Voor de compliance-mapping per NEN-control zie bijlage B.
 
@@ -96,6 +97,7 @@ Trigger: `pull_request` naar `development`, `pre-release`, `acceptatie` of `main
 | `build` | Compileert en bouwt OMOD |
 | `unit-test` | PoC-scope OMOD tests + JaCoCo (`mvn -pl omod test verify`) |
 | `dependency-review` | Controle op kwetsbare nieuwe dependencies |
+| `zizmor` | GitHub Actions workflow-security (SAST); `continue-on-error` tot baseline is opgelost |
 | `sonarcloud` | Uitgebreide tests incl. logging audit (`api`, `api-tests`, `omod`) + SonarCloud quality gate |
 
 Setup en secrets: [`sonarcloud-setup.md`](sonarcloud-setup.md).
@@ -105,6 +107,8 @@ De `sonarcloud`-job draait op alle PR’s (ook uit forks). GitHub kan een `if`-g
 Parallel draait [Snyk](../.github/workflows/snyk.yml) (SCA + SAST + CycloneDX SBOM + patchadvies) wanneer `SNYK_TOKEN` is geconfigureerd. Het rapport [`auditrapport/07-patchadvies.md`](auditrapport/07-patchadvies.md) wordt in die workflow gegenereerd en opgeslagen in het `snyk-results` artifact.
 
 [Dependabot](../.github/dependabot.yml) opent wekelijks PRs voor Maven-, GitHub Actions- en Docker-afhankelijkheden.
+
+**Lokaal (workflow-security):** [zizmor](https://zizmor.sh/) scant de pipeline-configuratie. Vanaf de repository-root: `zizmor .` — zie [`zizmor.md`](zizmor.md) voor installatie, baseline-bevindingen en uitleg.
 
 ---
 
