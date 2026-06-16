@@ -89,11 +89,11 @@
 |---|--------|--------|--------------------------------------------------------------------------------------------------------------------------------------------|
 | 1 | Logging framework geconfigureerd | ✅ Aanwezig | `api/src/main/resources/log4j.xml:6-16` — Log4j met CONSOLE-appender, ISO8601-tijdstempel, methodepatroon                                  |
 | 2 | Logger aanwezig in kernklassen | ✅ Aanwezig | `FormEntrySession.java:79`, `FormSubmissionController.java:31`, `HtmlFormEntryServiceImpl.java:44`, `HtmlFormEntryController.java:54`      |
-| 3 | Toegangslogging bij patiëntgegevens | ✅ Aanwezig | `FormEntrySession.java` — metadata-only INFO bij sessie-start (`action=session.created`) en succesvolle submit (`action=submit.success`); zie [`08-logging.md`](../08-logging.md) |
+| 3 | Toegangslogging bij patiëntgegevens | ✅ Aanwezig | `FormEntryAuditLogFormatter.java` + `FormEntrySession.java` — metadata-only INFO bij sessie-start (`action=session.created`) en succesvolle submit (`action=submit.success`); zie [`08-logging.md`](../08-logging.md) |
 | 4 | Foutlogging bij formulierverwerking | ✅ Aanwezig | `HtmlFormEntryController.java:285,323,329` — `log.error` bij validatie-, invoer- en verzendfouten                                          |
 | 5 | Audittrail via creator/changedBy op data | ✅ Aanwezig | `HtmlFormEntryServiceImpl.java:120,124` — `setCreator` / `setChangedBy` met ingelogde gebruiker                                            |
-| 6 | Audittrail bij void-acties | ✅ Aanwezig | `FormEntrySession.java:660` — `log.debug("voiding obs: " + o.getObsId())` en `FormSubmissionActions.java:320`                              |
-| 7 | Wijzigingsregistratie | ✅ Aanwezig | `FormSubmissionActions.java` — DEBUG logt alleen `obsId`/`conceptId` (geen klinische waarden); standaard uitgeschakeld door INFO-default in `log4j.xml` |
+| 6 | Audittrail bij void-acties | ✅ Aanwezig | `FormEntrySession` — DEBUG via `FormEntryAuditLogFormatter.formatVoidObsDebugMessage()`; `FormSubmissionActions` — VOID/CHANGED via `formatObsReference()` |
+| 7 | Wijzigingsregistratie | ✅ Aanwezig | `FormSubmissionActions` + `FormEntryAuditLogFormatter` — DEBUG alleen `obsId`/`conceptId`; standaard uitgeschakeld door INFO-default in `log4j.xml` |
 | 8 | Creator-tracking op orders en programma-inschrijvingen | ✅ Aanwezig | `FormSubmissionActions.java:511,533`, `DrugOrderSubmissionElement.java:622,653`                                                            |
 | 9 | Logbescherming | ❌ Afwezig | Logbestanden worden naar console/file geschreven zonder integriteitsbeveiliging                                                            |
 | 10 | Gecentraliseerde log-aggregatie | ❌ Afwezig | Geen koppeling met externe logging-systemen                                                                                                |

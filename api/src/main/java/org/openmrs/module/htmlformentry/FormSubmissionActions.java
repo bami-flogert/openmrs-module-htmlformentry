@@ -332,8 +332,7 @@ public class FormSubmissionActions {
 		String oldString = existingObs.getValueAsString(Context.getLocale());
 		String newString = newObs.getValueAsString(Context.getLocale());
 		if (log.isDebugEnabled() && concept != null) {
-			log.debug("obsId=" + existingObs.getObsId() + " conceptId=" + concept.getConceptId()
-			        + " action=changed");
+			log.debug(printObsHelper(existingObs) + " action=changed");
 		}
 		boolean valueChanged = !newString.equals(oldString);
 		// TODO: handle dates that may equal encounter date

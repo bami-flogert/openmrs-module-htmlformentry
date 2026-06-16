@@ -175,8 +175,8 @@ flowchart LR
         AVG32[AVG art. 32 beveiliging logs]
     end
     subgraph module_impl [Module-implementatie]
-        INFOlog[INFO: naam DOB geslacht]
-        DEBUGlog[DEBUG: obs-waarden old to new]
+        INFOlog[INFO: patientId userId action]
+        DEBUGlog[DEBUG: obsId conceptId only]
         DBtrail[creator/changedBy in DB]
         Archive[optioneel XML-archief]
     end
@@ -192,38 +192,25 @@ flowchart LR
 - **Verantwoordingsplicht** — aantonen welke gebruiker op welk moment een patiëntdossier heeft geopend of gewijzigd.
 - **Detectie misbruik** — ondersteuning bij onderzoek naar onbevoegde inzage (dreiging D5 in [`04-risicomatrix.md`](04-risicomatrix.md)).
 - **Forensisch onderzoek** — na een datalek (D2) zijn toegangslogs essentieel bewijsmateriaal.
-- **NEN-7510-compliance** — [`01-gap-analyse.md`](01-gap-analyse.md) A.8.15 beoordeelt toegangslogging als ✅ aanwezig (`FormEntrySession.java:145-148`).
+- **NEN-7510-compliance** — [`01-gap-analyse.md`](01-gap-analyse.md) A.8.15 beoordeelt toegangslogging als ✅ aanwezig (`FormEntryAuditLogFormatter` + `FormEntrySession`).
 
-### 8.4.3 Waar de module de privacy ondermijnt
+### 8.4.3 Privacy-risico's — baseline vs. PoC (jun 2026)
 
-**1. Over-logging van identificerende gegevens (INFO)**
+#### Gemitigeerd in PoC (HFE-04)
 
-Bij elke formuliersessie logt de module patiëntnaam, geboortedatum en geslacht in plaintext:
+**1. Over-logging van identificerende gegevens (INFO) — opgelost**
 
-```144:148:api/src/main/java/org/openmrs/module/htmlformentry/FormEntrySession.java
-        // Audit logging for HIPAA compliance — records patient access with identifying information
-        log.info("FormEntrySession created: patient=" + patient.getPatientIdentifier()
-                + " dob=" + patient.getBirthdate()
-                + " gender=" + patient.getGender()
-                + " names=" + patient.getPersonName());  // PII logged to application log
-```
+*Baseline (vóór PoC):* patiëntnaam, geboortedatum en geslacht op INFO — zie [`bevinding-hfe-04-voor.md`](../pentest/bevinding-hfe-04-voor.md).
 
-Het commentaar verwijst naar HIPAA-compliance, maar de implementatie **overschrijdt** wat voor AVG-doeleinden nodig is: een `userId` + `patientUuid` + timestamp volstaat voor toegangscontrole.
+*Na PoC:* metadata-only via `FormEntryAuditLogFormatter.formatSessionCreated()` en `formatSubmitSuccess()` — alleen `patientId`, `userId`, `htmlFormId`, `encounterId`, `mode`, vaste `action`-tokens. Zie [`08-logging.md`](../08-logging.md).
 
-**2. Klinische inhoud in DEBUG-logs**
+**2. Klinische inhoud in DEBUG-logs — opgelost**
 
-Bij elke obs-wijziging worden oude en nieuwe waarden gelogd:
+*Baseline:* `FormSubmissionActions` logde oude/nieuwe klinische waarden via `getValueAsString()`.
 
-```331:336:api/src/main/java/org/openmrs/module/htmlformentry/FormSubmissionActions.java
-		Obs newObs = HtmlFormEntryUtil.createObs(concept, newValue, newDatetime, accessionNumber);
-		String oldString = existingObs.getValueAsString(Context.getLocale());
-		String newString = newObs.getValueAsString(Context.getLocale());
-		if (log.isDebugEnabled() && concept != null) {
-			log.debug("For concept " + concept.getName(Context.getLocale()) + ": " + oldString + " -> " + newString);
-		}
-```
+*Na PoC:* DEBUG gebruikt alleen `obsId`/`conceptId` via `FormEntryAuditLogFormatter.formatObsReference()`; module-default INFO in `log4j.xml`. Regressie: [`03-teststrategie.md`](../03-teststrategie.md) §7.6.
 
-Met de standaard logconfiguratie op DEBUG (`api/src/main/resources/log4j.xml:13-14`) kunnen diagnoses, lab-uitslagen en vitale waarden in application logs terechtkomen.
+#### Nog open (buiten PoC-scope)
 
 **3. Dubbele verwerking via archivering**
 
@@ -243,31 +230,31 @@ Bij submit-fouten worden stack traces aan de eindgebruiker getoond:
 
 **5. Geen logbeveiliging**
 
-[`01-gap-analyse.md`](01-gap-analyse.md) A.8.15 items 9–11: geen integriteitsbeveiliging, geen centrale aggregatie, geen retentie- of rotatiebeleid. Logs worden naar console geschreven (`log4j.xml`) zonder toegangscontrole op het logbestand zelf. Daarbovenop draait de logging-stack op **log4j 1.2.15 (end-of-life)** zonder beschikbare patches (HFE-001 in [`06-security-backlog.md`](06-security-backlog.md)): de audittrail zelf is daarmee een kwetsbaar kroonjuweel (I=5), naast het feit dat er te veel PII in wordt geschreven.
+[`01-gap-analyse.md`](01-gap-analyse.md) A.8.15 items 9–11: geen integriteitsbeveiliging, geen centrale aggregatie, geen retentie- of rotatiebeleid. Logs worden naar console geschreven (`log4j.xml`) zonder toegangscontrole op het logbestand zelf. Daarbovenop draait de logging-stack op **log4j 1.2.15 (end-of-life)** zonder beschikbare patches (HFE-001 in [`06-security-backlog.md`](06-security-backlog.md)): de audittrail zelf is daarmee een kwetsbaar kroonjuweel (I=5).
 
 ### 8.4.4 De spanning samengevat
 
-| Behoefte | Privacy-eis | Huidige module | Spanning |
-|----------|-------------|----------------|----------|
-| Wie heeft dossier geopend? | Log alleen `userId` + `patientUuid` | Logt ook naam, DOB, geslacht | Overtollige identificatie in logs |
-| Wat is gewijzigd? | Audittrail op entiteitsniveau (DB) volstaat | Logt oude/nieuwe klinische waarden op DEBUG | Dubbele opslag gevoelige inhoud |
-| Bewijs van inzage | Logs beschermd, beperkte retentie | Console-only, geen beleid | Logs zelf worden risico |
+| Behoefte | Privacy-eis | Module (na PoC) | Spanning |
+|----------|-------------|-----------------|----------|
+| Wie heeft dossier geopend? | Log alleen `userId` + pseudoniem | ✅ `patientId` + `userId` + `action` op INFO | Opgelost (HFE-04) |
+| Wat is gewijzigd? | Audittrail op entiteitsniveau (DB) volstaat | ✅ DEBUG alleen IDs; DB `creator`/`changedBy` | Opgelost in logs; DB blijft authoritatief |
+| Bewijs van inzage | Logs beschermd, beperkte retentie | Console-only, geen retentiebeleid | Logs zelf blijven risico |
 | Foutafhandeling | Generieke melding aan gebruiker | Volledige stack trace in UI | Onnodige openbaarmaking |
 
-De gap-analyse bevestigt deze spanning: toegangslogging wordt als ✅ beoordeeld (item #3), maar PII-conformiteit als ⚠️ gedeeltelijk (item #13).
+De gap-analyse bevestigt: toegangslogging ✅ (item #3); PII-conformiteit ⚠️ gedeeltelijk (item #13) — rest-risico `HtmlFormEntryUtil` XML op ERROR.
 
 ### 8.4.5 Aanbevolen evenwicht
 
 | Maatregel | Rationale |
 |-----------|-----------|
-| Toegangslog: `userId` + `patientUuid` + `formId` + timestamp | Voldoet aan verantwoordingsplicht zonder naam/DOB |
-| Klinische wijzigingen: alleen database-audittrail (`creator`/`changedBy`) | Dataminimalisatie; DB-trail is al aanwezig |
+| Toegangslog: `userId` + `patientId` + `formId` + timestamp | Geïmplementeerd in PoC via `FormEntryAuditLogFormatter` |
+| Klinische wijzigingen: alleen database-audittrail (`creator`/`changedBy`) | Geïmplementeerd: DEBUG gesaniteerd, INFO-default |
 | Productie-logniveau: INFO of WARN, nooit DEBUG voor `htmlformentry` | Voorkomt klinische waarden in logs |
 | Centrale log-aggregator met RBAC, retentie (min. 1 jaar), integriteitscontrole | NEN-7510-2 §A.12.4 + AVG art. 32 |
 | Archivering standaard uit; indien aan: versleuteling + toegangsbeheer | Beperkt dubbele verwerking |
 | Foutmeldingen: generieke tekst naar UI, details alleen in beveiligde logs | Voorkomt disclosure via browser |
 
-Concrete codewijziging: vervang `FormEntrySession.java:145-148` door pseudonimiseerde identifier (zie [`01-gap-analyse.md`](01-gap-analyse.md) verbetering bij item #13).
+PoC-implementatie: [`08-logging.md`](../08-logging.md) · pentest [`bevinding-hfe-04-na.md`](../pentest/bevinding-hfe-04-na.md).
 
 ---
 
@@ -277,9 +264,9 @@ Concrete codewijziging: vervang `FormEntrySession.java:145-148` door pseudonimis
 
 2. **Art. 35** — Een **volledige DPIA is verplicht** bij productie-inzet. De verwerkingskenmerken (grootschalige gezondheidsdata, kwetsbare betrokkenen, verwerking buiten zicht) overschrijden de verplichte drempel. Dit document levert module-specifieke input; de DPIA zelf is een verantwoordelijkheid van de zorginstelling.
 
-3. **Logging vs. privacy** — Het meest concrete technische probleem is de spanning tussen auditplicht en dataminimalisatie. De HIPAA-intentie in `FormEntrySession` botst met AVG art. 5: de module logt meer identificerende en klinische data dan noodzakelijk, terwijl de database-audittrail (`creator`/`changedBy`) al volstaat voor verantwoording.
+3. **Logging vs. privacy** — De PoC lost de belangrijkste spanning op: INFO-logs zijn metadata-only; DEBUG logt geen klinische waarden meer. Rest-risico's: log-infrastructuur (retentie, integriteit), XML op ERROR, en optionele form-archivering.
 
-4. **Vervolgacties** — Mitigaties staan in [`01-gap-analyse.md`](01-gap-analyse.md) (items #9–13, A.8.15), de preventieve maatregelen in [`05-bowtie.md`](05-bowtie.md) en de geprioriteerde bevindingen in [`06-security-backlog.md`](06-security-backlog.md) (HFE-001 logging, HFE-002 upload, HFE-003 XSS). Prioriteit: pseudonimiseerde toegangslogs, DEBUG uitschakelen in productie, beveiligde log-infrastructuur, en patch van H-prioriteiten uit de security backlog.
+4. **Vervolgacties** — Openstaande punten: log-infrastructuur (retentie, integriteit, Log4j 2.x), `HtmlFormEntryUtil` XML op ERROR, form-archivering, en H-prioriteiten uit [`06-security-backlog.md`](06-security-backlog.md) (HFE-002 upload, HFE-003 XSS). PoC-logging: [`08-logging.md`](../08-logging.md).
 
 ---
 
