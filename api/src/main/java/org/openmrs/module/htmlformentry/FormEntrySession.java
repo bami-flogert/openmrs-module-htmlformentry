@@ -141,10 +141,7 @@ public class FormEntrySession {
         context.setHttpSession(httpSession);
         this.httpSession = httpSession;
         this.patient = patient;
-        log.info("FormEntrySession created: patientId=" + patient.getPatientId()
-                + " userId=" + (Context.getAuthenticatedUser() != null
-                    ? Context.getAuthenticatedUser().getUserId() : "unknown")
-                + " action=session.created");
+        logSessionCreated();
 
         context.setupExistingData(patient);
         velocityEngine = new VelocityEngine();
@@ -506,9 +503,9 @@ public class FormEntrySession {
                 Obs o = toCheck.remove(toCheck.size() - 1);
                 if (o.getObsDatetime() == null && o.getEncounter() != null) {
                     o.setObsDatetime(o.getEncounter().getEncounterDatetime());
-                    if (log.isDebugEnabled())
-                        log.debug("Set obsDatetime to " + o.getObsDatetime() + " for "
-                                + o.getConcept().getName(Context.getLocale()));
+                    if (log.isDebugEnabled()) {
+                        log.debug(formatObsDatetimeDebugMessage(o));
+                    }
                 }
                 if (o.getLocation() == null && o.getEncounter() != null) {
                     o.setLocation(o.getEncounter().getLocation());
@@ -577,7 +574,7 @@ public class FormEntrySession {
         if (submissionActions.getRelationshipsToCreate() != null) {
             for (Relationship r : submissionActions.getRelationshipsToCreate()) {
                 if (log.isDebugEnabled()) {
-                    log.debug("creating relationships" + r.getRelationshipType().getDescription());
+                    log.debug(formatRelationshipDebugMessage("creating", r.getRelationshipType().getId(), r.getId()));
                 }
                 Context.getPersonService().saveRelationship(r);
             }
@@ -586,7 +583,7 @@ public class FormEntrySession {
         if (submissionActions.getRelationshipsToVoid() != null) {
             for (Relationship r : submissionActions.getRelationshipsToVoid()) {
                 if (log.isDebugEnabled()) {
-                    log.debug("voiding relationships" + r.getId());
+                    log.debug(formatRelationshipDebugMessage("voiding", null, r.getId()));
                 }
                 Context.getPersonService().voidRelationship(r, "htmlformentry");
             }
@@ -595,7 +592,7 @@ public class FormEntrySession {
         if (submissionActions.getRelationshipsToEdit() != null) {
             for (Relationship r : submissionActions.getRelationshipsToCreate()) {
                 if (log.isDebugEnabled()) {
-                    log.debug("editing relationships" + r.getId());
+                    log.debug(formatRelationshipDebugMessage("editing", null, r.getId()));
                 }
                 Context.getPersonService().saveRelationship(r);
             }
@@ -655,8 +652,9 @@ public class FormEntrySession {
         
         if (submissionActions.getObsToVoid() != null) {
             for (Obs o : submissionActions.getObsToVoid()) {
-                if (log.isDebugEnabled())
-                    log.debug("voiding obs: " + o.getObsId());
+                if (log.isDebugEnabled()) {
+                    log.debug(formatVoidObsDebugMessage(o.getObsId()));
+                }
                 obsService.voidObs(o, "htmlformentry");
                 // if o was in a group and that group has no obs left, void the group
 				voidObsGroupIfAllChildObsVoided(o.getObsGroup());
@@ -732,14 +730,7 @@ public class FormEntrySession {
             }
         }
 
-        log.info("Form submission completed: patientId="
-                + (patient != null ? patient.getPatientId() : "none")
-                + " userId=" + (Context.getAuthenticatedUser() != null
-                    ? Context.getAuthenticatedUser().getUserId() : "unknown")
-                + " htmlFormId=" + getHtmlFormId()
-                + " encounterId=" + (encounter != null ? encounter.getEncounterId() : "none")
-                + " mode=" + context.getMode()
-                + " action=submit.success");
+        logSubmitSuccess();
 
     }
 
@@ -1174,5 +1165,108 @@ public class FormEntrySession {
     
     public String getEncounterLocationName() {
     	return StringEscapeUtils.escapeHtml(encounter.getLocation() == null ? "" : encounter.getLocation().getName());
+    }
+
+    private void logSessionCreated() {
+        if (log.isInfoEnabled()) {
+            log.info(formatSessionCreatedMessage());
+        }
+    }
+
+    private void logSubmitSuccess() {
+        if (log.isInfoEnabled()) {
+            log.info(formatSubmitSuccessMessage());
+        }
+    }
+
+    private String formatSessionCreatedMessage() {
+        StringBuilder sb = new StringBuilder(80);
+        sb.append("FormEntrySession created:");
+        appendAuditField(sb, "patientId", resolvePatientId());
+        appendAuditField(sb, "userId", resolveUserId());
+        sb.append(" action=session.created");
+        return sb.toString();
+    }
+
+    private String formatSubmitSuccessMessage() {
+        StringBuilder sb = new StringBuilder(120);
+        sb.append("Form submission completed:");
+        appendAuditField(sb, "patientId", resolvePatientId());
+        appendAuditField(sb, "userId", resolveUserId());
+        appendAuditField(sb, "htmlFormId", getHtmlFormId());
+        appendAuditField(sb, "encounterId", resolveEncounterId());
+        sb.append(" mode=").append(safeModeName(context.getMode()));
+        sb.append(" action=submit.success");
+        return sb.toString();
+    }
+
+    private Integer resolvePatientId() {
+        return patient != null ? patient.getPatientId() : null;
+    }
+
+    private Integer resolveUserId() {
+        return Context.getAuthenticatedUser() != null ? Context.getAuthenticatedUser().getUserId() : null;
+    }
+
+    private Integer resolveEncounterId() {
+        return encounter != null ? encounter.getEncounterId() : null;
+    }
+
+    private static void appendAuditField(StringBuilder sb, String fieldName, Integer value) {
+        sb.append(' ').append(fieldName).append('=');
+        if (value != null) {
+            sb.append(value.intValue());
+        } else {
+            sb.append("none");
+        }
+    }
+
+    private static String safeModeName(Mode mode) {
+        return mode != null ? mode.name() : "unknown";
+    }
+
+    private static String formatObsDatetimeDebugMessage(Obs obs) {
+        StringBuilder sb = new StringBuilder(64);
+        sb.append("Set obsDatetime for obsId=");
+        if (obs.getObsId() != null) {
+            sb.append(obs.getObsId().intValue());
+        } else {
+            sb.append("none");
+        }
+        sb.append(" conceptId=");
+        if (obs.getConcept() != null && obs.getConcept().getConceptId() != null) {
+            sb.append(obs.getConcept().getConceptId().intValue());
+        } else {
+            sb.append("none");
+        }
+        return sb.toString();
+    }
+
+    private static String formatVoidObsDebugMessage(Integer obsId) {
+        StringBuilder sb = new StringBuilder(32);
+        sb.append("voiding obs obsId=");
+        if (obsId != null) {
+            sb.append(obsId.intValue());
+        } else {
+            sb.append("none");
+        }
+        return sb.toString();
+    }
+
+    private static String formatRelationshipDebugMessage(String action, Integer relationshipTypeId, Integer relationshipId) {
+        StringBuilder sb = new StringBuilder(64);
+        sb.append(action).append(" relationship relationshipTypeId=");
+        if (relationshipTypeId != null) {
+            sb.append(relationshipTypeId.intValue());
+        } else {
+            sb.append("none");
+        }
+        sb.append(" relationshipId=");
+        if (relationshipId != null) {
+            sb.append(relationshipId.intValue());
+        } else {
+            sb.append("none");
+        }
+        return sb.toString();
     }
 }
