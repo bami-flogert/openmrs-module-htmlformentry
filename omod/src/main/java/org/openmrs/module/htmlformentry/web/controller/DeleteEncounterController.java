@@ -1,6 +1,10 @@
 package org.openmrs.module.htmlformentry.web.controller;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.openmrs.Encounter;
 import org.openmrs.api.context.Context;
@@ -30,17 +34,76 @@ public class DeleteEncounterController {
     								  @RequestParam("htmlFormId") Integer htmlFormId,
                                       @RequestParam(value="reason", required=false) String reason,
                                       @RequestParam(value="returnUrl", required=false) String returnUrl,
-                                      HttpServletRequest request) throws Exception {
+                                      HttpServletRequest request, HttpServletResponse response) throws Exception {
+        // HFE-02 (CWE-862): voiding an encounter requires the proper privilege; a bare
+        // logged-in session is no longer sufficient.
+        Context.requirePrivilege("Delete Encounters");
+
+        // HFE-02 (CWE-352): reject cross-site POSTs. Only same-origin requests are honoured,
+        // which blocks the tokenless cross-site form used in the CSRF PoC.
+        if (!isSameOrigin(request)) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Cross-site request blocked.");
+            return null;
+        }
+
         Encounter enc = Context.getEncounterService().getEncounter(encounterId);
+        // HFE-02 (CWE-639): fail closed on an unknown/invalid encounterId instead of NPE-ing.
+        if (enc == null) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Encounter not found.");
+            return null;
+        }
         Integer ptId = enc.getPatient().getPatientId();
         HtmlFormEntryService hfes = Context.getService(HtmlFormEntryService.class);
         HtmlForm form = hfes.getHtmlForm(htmlFormId);
         HtmlFormEntryUtil.voidEncounter(enc, form, reason);
         Context.getEncounterService().saveEncounter(enc);
-        if (!StringUtils.hasText(returnUrl)) {
+
+        // HFE-03 (CWE-601): never redirect to an attacker-controlled absolute/external URL.
+        // Only a relative path within this application is allowed; anything else falls back
+        // to the patient dashboard.
+        if (!isSafeRelativeUrl(returnUrl)) {
         	returnUrl = request.getContextPath() + "/patientDashboard.form?patientId=" + ptId;
         }
         return new ModelAndView(new RedirectView(returnUrl));
+    }
+
+    /**
+     * CSRF defence (HFE-02): a state-changing POST is only accepted when the {@code Origin} (or, as
+     * a fallback, {@code Referer}) header names the same host as the request. A missing or
+     * mismatching header is treated as cross-site and rejected, which stops the tokenless
+     * cross-site form POST used by the CSRF proof-of-concept.
+     */
+    private boolean isSameOrigin(HttpServletRequest request) {
+        String source = request.getHeader("Origin");
+        if (!StringUtils.hasText(source)) {
+            source = request.getHeader("Referer");
+        }
+        if (!StringUtils.hasText(source)) {
+            return false;
+        }
+        try {
+            String sourceHost = new URI(source).getHost();
+            return sourceHost != null && sourceHost.equalsIgnoreCase(request.getServerName());
+        }
+        catch (URISyntaxException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Open-redirect defence (HFE-03): accepts only relative same-application paths. The value must
+     * start with a single '/', must not be protocol-relative ("//host"), must not embed a scheme
+     * ("://") and must not contain a backslash (which some browsers normalise to '/'). Everything
+     * else — including absolute external URLs — is rejected so the caller uses the safe default.
+     */
+    private boolean isSafeRelativeUrl(String url) {
+        if (!StringUtils.hasText(url)) {
+            return false;
+        }
+        if (!url.startsWith("/") || url.startsWith("//")) {
+            return false;
+        }
+        return !url.contains("://") && !url.contains("\\");
     }
 
 }
