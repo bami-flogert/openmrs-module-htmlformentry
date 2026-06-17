@@ -8,7 +8,7 @@ overzicht zichtbaar dat elke kwetsbaarheid is onderbouwd én afgehandeld.
 
 ---
 
-## 1. Aangetoonde kwetsbaarheden (penetratietest)
+## 1. Aangetoonde kwetsbaarheden
 
 | ID | Kwetsbaarheid (CWE) | NEN-control | Risico (bow-tie) | Test / bewijs | Mitigatie (code) | Validatie (hertest) | Status |
 |----|---------------------|-------------|------------------|---------------|------------------|---------------------|--------|
@@ -16,7 +16,7 @@ overzicht zichtbaar dat elke kwetsbaarheid is onderbouwd én afgehandeld.
 | **HFE-02** | Missing authz + CSRF + IDOR (CWE-862/352/639) | A.8.3 · A.8.5 | Datamanipulatie (I=5) | [voor](../pentest/bevinding-hfe-02-voor.md) · [bewijs](../pentest/bewijs/) (`hfe02-*`) | `requirePrivilege("Delete Encounters")` + `isSameOrigin()` + fail-closed | [na ✅](../pentest/bevinding-hfe-02-na.md) (A2 + positieve controle) | Opgelost |
 | **HFE-03** | Open redirect (CWE-601) | A.8.5 | D2 datalek/phishing | [voor](../pentest/bevinding-hfe-03-voor.md) · [bewijs](../pentest/bewijs/) (`hfe03-*`) | `isSafeRelativeUrl()` — alleen interne relatieve paden | [na ✅](../pentest/bevinding-hfe-03-na.md) (A3) | Opgelost |
 
-## 2. Kwetsbare afhankelijkheden (SCA / patchadvies)
+## 2. Kwetsbare afhankelijkheden
 
 | ID | Component / CVE | NEN-control | Contextuele score | Bron | Advies | Status |
 |----|-----------------|-------------|-------------------|------|--------|--------|
@@ -29,7 +29,7 @@ overzicht zichtbaar dat elke kwetsbaarheid is onderbouwd én afgehandeld.
 | **HFE-007** | handlebars 1.0.12 (gebundeld) — CVE-2019-19919 | A.8.28 | 5.5 (M) | [backlog](06-security-backlog.md) | upgrade met HFE-003 | Open |
 | **HFE-008** | commons-codec 1.10 (test-classpath) | A.8.8 | n.v.t. | [backlog](06-security-backlog.md) | — | False positive |
 
-## 3. Compliance-gaps (gap-analyse) → control → verbetering
+## 3. Compliance-gaps → control → verbetering
 
 | Control | Gap | Geraakt risico | Verbetering | Bron |
 |---------|-----|----------------|-------------|------|
@@ -41,16 +41,7 @@ overzicht zichtbaar dat elke kwetsbaarheid is onderbouwd én afgehandeld.
 
 ## Legenda
 
-- **NEN-control** verwijst naar NEN-7510:2024-2 (A.8.x). Controls A.8.8 (technische
-  kwetsbaarheden) en A.8.28 (veilig programmeren) komen naast de primair geauditeerde
+- **NEN-control** verwijst naar NEN-7510:2024-2 (A.8.x). Controls A.8.8 en A.8.28 komen naast de primair geauditeerde
   A.8.3/A.8.5/A.8.15 voor bij de afhankelijkheids- en front-end-bevindingen.
-- **Contextuele score** = CVSS bijgesteld op bereikbaarheid + geraakt kroonjuweel; zie
-  [`06-security-backlog.md`](06-security-backlog.md).
+- **Contextuele score** = CVSS bijgesteld op bereikbaarheid + geraakt kroonjuweel;
 - **Status:** Opgelost = gemitigeerd én met hertest aangetoond · Open = in patchadvies/backlog.
-
-## Verwijzingen
-
-- Hoofdrapport: [`00-auditrapport.md`](00-auditrapport.md)
-- Gap-analyse: [`01-gap-analyse.md`](01-gap-analyse.md) · Risicomatrix: [`04-risicomatrix.md`](04-risicomatrix.md) · Bow-tie: [`05-bowtie.md`](05-bowtie.md)
-- Security backlog: [`06-security-backlog.md`](06-security-backlog.md) · Patchadvies: [`07-patchadvies.md`](07-patchadvies.md)
-- Penetratietests: [`../pentest/`](../pentest/)
