@@ -82,7 +82,7 @@ public class DeleteEncounterController {
      * Seam that performs the actual void + save. Kept separate so the request-handling and security
      * branches can be unit-tested without touching the persistence layer.
      */
-    void voidEncounter(Encounter enc, Integer htmlFormId, String reason) {
+    void voidEncounter(Encounter enc, Integer htmlFormId, String reason) throws Exception {
         HtmlFormEntryService hfes = Context.getService(HtmlFormEntryService.class);
         HtmlForm form = hfes.getHtmlForm(htmlFormId);
         HtmlFormEntryUtil.voidEncounter(enc, form, reason);
