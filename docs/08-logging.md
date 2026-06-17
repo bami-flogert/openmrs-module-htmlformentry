@@ -11,7 +11,7 @@ Pipeline-audittrail: [`auditrapport/02-pipeline-compliance.md`](auditrapport/02-
 
 ## Doel
 
-Applicatielogging in de module voldoet aan **0 PII in logs** (NFR-S1) en **metadata-only audit logging** (NFR-S2). Dit document beschrijft wat we wijzigen in de PoC en welke regels ontwikkelaars volgen.
+Applicatielogging in de module voldoet aan **0 PII in logs** (NFR-S1) en **metadata-only auditlogging** (NFR-S2). Dit document beschrijft wat we wijzigen in de PoC en welke regels ontwikkelaars volgen.
 
 ---
 
@@ -34,30 +34,30 @@ Applicatielogging in de module voldoet aan **0 PII in logs** (NFR-S1) en **metad
 | Laag | Rol | Waarom |
 |------|-----|--------|
 | **Applicatielog (INFO)** | Wie / wanneer / welk formulier / welke patiënt (ID) bij openen en succesvol opslaan | Snelle operationele audit; pentest-vriendelijk; A.8.15 activiteiten |
-| **Database (`creator`/`changedBy`)** | Welke entiteiten gewijzigd zijn per obs, encounter, order | Authoritatief voor klinische verantwoording; al aanwezig in OpenMRS |
+| **Database (`creator`/`changedBy`)** | Welke entiteiten gewijzigd zijn per obs, encounter, order | Leidend voor klinische verantwoording; al aanwezig in OpenMRS |
 | **Niet gelogd** | Klinische waarden, namen, request/XML-body | AVG dataminimalisatie (NFR-S1) |
 
 **Waarom submit-logging is toegevoegd:** openen van een formulier (`session.created`) bewijst geen succesvolle schrijfactie. Persist van klinische data is de kritieke activiteit onder A.8.15.
 
 **Waarom geen obs-waarden in logs:** redundant met de database; hoog privacyrisico. DEBUG-paden zijn gesaniteerd en standaard uitgeschakeld (INFO-default).
 
-**Waarom een centrale formatter:** één plek voor metadata-only berichten; voorkomt string-concatenatie van domain-objecten (log injection / Sonar java:S5145).
+**Waarom een centrale formatter:** één plek voor metadata-only berichten; voorkomt string-concatenatie van domeinobjecten (log injection / Sonar java:S5145).
 
 ---
 
-## Event inventory
+## Gebeurtenissenoverzicht
 
-| Event | Logged? | Sensitive data | NEN A.8.15? |
-|-------|---------|----------------|-------------|
-| Formuliersessie geopend | ✅ INFO — `FormEntrySession` constructor | Metadata only (`patientId`, `userId`, `action=session.created`) | ✅ Activiteit (toegang) |
-| Formulier succesvol opgeslagen | ✅ INFO — `FormEntrySession.applyActions()` | Metadata only (`patientId`, `userId`, `htmlFormId`, `encounterId`, `mode`, `action=submit.success`) | ✅ Activiteit (data write) |
-| Validatie-/submit-fout | ✅ ERROR — `HtmlFormEntryController` | Stacktrace; geen patient in logmessage | ✅ Uitzonderingen |
+| Gebeurtenis | Gelogd? | Gevoelige data | NEN A.8.15? |
+|-------------|---------|----------------|-------------|
+| Formuliersessie geopend | ✅ INFO — `FormEntrySession` constructor | Alleen metadata (`patientId`, `userId`, `action=session.created`) | ✅ Activiteit (toegang) |
+| Formulier succesvol opgeslagen | ✅ INFO — `FormEntrySession.applyActions()` | Alleen metadata (`patientId`, `userId`, `htmlFormId`, `encounterId`, `mode`, `action=submit.success`) | ✅ Activiteit (data write) |
+| Validatie-/submit-fout | ✅ ERROR — `HtmlFormEntryController` | Stacktrace; geen patiënt in logbericht | ✅ Uitzonderingen |
 | Obs void/change | ✅ DEBUG (uit bij INFO-default) | Alleen `obsId`/`conceptId` via `FormEntryAuditLogFormatter` | ✅ Wijziging (indirect) |
 | XML parse failure | ✅ ERROR — `HtmlFormEntryUtil:327` | **Volledige XML-body** — bekend rest-risico | ❌ Schendt NFR-S1-beleid |
 | Module start/stop | ✅ INFO — `HtmlFormEntryActivator` | Geen | ✅ Operationeel |
 | Pipeline build/deploy | ✅ GitHub Actions artifacts | Geen patiëntdata | ✅ Pipeline-laag (bijlage B) |
 | Auth failure / privilege denial | ❌ | — | ❌ Gap (geen security-logger) |
-| Log retentie / integriteit | ❌ | — | ❌ Gap (geen RollingFileAppender) |
+| Logretentie / integriteit | ❌ | — | ❌ Gap (geen RollingFileAppender) |
 
 ---
 
@@ -68,8 +68,8 @@ Gebruik Apache Commons Logging (`LogFactory.getLog(getClass())`) — geen nieuwe
 | Regel | Toelichting |
 |-------|-------------|
 | Geen PII op INFO/WARN/ERROR | Geen namen, geboortedatum, geslacht, BSN, vrije medische tekst |
-| Metadata-first | `patientId`, `userId`, `encounterId`, `htmlFormId`, `mode`, `action`, `durationMs` |
-| Centrale formatter | Nieuwe audit- of DEBUG-logs via `FormEntryAuditLogFormatter`; geen directe string-concatenatie van domain-objecten |
+| Metadata eerst | `patientId`, `userId`, `encounterId`, `htmlFormId`, `mode`, `action`, `durationMs` |
+| Centrale formatter | Nieuwe audit- of DEBUG-logs via `FormEntryAuditLogFormatter`; geen directe string-concatenatie van domeinobjecten |
 | Fouten zonder payload | `log.error("Exception during form validation", ex)` — stacktrace ja, request-body nee |
 | Audit op data | OpenMRS `setCreator` / `setChangedBy` blijft de primaire wijzigingsregistratie |
 | Geen `getPatientIdentifier()` in logs | Gebruik intern `patientId`; identifier kan een zichtbaar patiëntnummer zijn |
@@ -77,13 +77,13 @@ Gebruik Apache Commons Logging (`LogFactory.getLog(getClass())`) — geen nieuwe
 **Toegestaan:** `patientId=42`, `userId=7`, `action=session.created`, `action=submit.success`, `htmlFormId=3`, `encounterId=101`, `mode=ENTER`, `durationMs=230`  
 **Verboden:** `names=`, `dob=`, `gender=`, `obs.getValueAsString()`, volledige request/XML-body
 
-Null-waarden in audit logs: `none` voor IDs; null `mode` → `unknown`.
+Null-waarden in auditlogs: `none` voor IDs; null `mode` → `unknown`.
 
 ---
 
 ## Logniveaus
 
-| Omgeving | Default level `org.openmrs.module.htmlformentry` |
+| Omgeving | Standaardniveau `org.openmrs.module.htmlformentry` |
 |----------|--------------------------------------------------|
 | Ontwikkeling / test / acceptatie | INFO (module `log4j.xml`; bevestig runtime-config op server) |
 | Productie (advies) | WARN — configureer via server `log4j` indien nodig |
@@ -127,5 +127,5 @@ Pentest-bewijs: [HFE-04 vóór](pentest/bevinding-hfe-04-voor.md) · [HFE-04 na]
 |----------|---------|
 | [`opdracht/non-functionals.md`](../opdracht/non-functionals.md) | NFR-S1, NFR-S2, NFR-S6 |
 | [`auditrapport/01-gap-analyse.md`](auditrapport/01-gap-analyse.md) | Baseline A.8.15 |
-| [`03-teststrategie.md`](03-teststrategie.md) | §7.6 logging audit tests |
+| [`03-teststrategie.md`](03-teststrategie.md) | §7.6 logging-audittests |
 | [`opdracht/voortgang-en-todo.md`](../opdracht/voortgang-en-todo.md) | Pentest-status |

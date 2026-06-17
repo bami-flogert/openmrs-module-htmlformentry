@@ -1,4 +1,4 @@
-# Review PR #15 — merge-readiness
+# Review PR #15 — gereedheid voor merge
 
 **Datum:** 15 juni 2026  
 **Branch:** `acceptatie` → `main`  
@@ -10,7 +10,7 @@
 
 | Aspect | Status |
 |--------|--------|
-| **Merge-ready (OTAP/CI-deel)** | Ja, na push van scoped CI + doc-fixes |
+| **Gereed voor merge (OTAP/CI-deel)** | Ja, na push van scoped CI + doc-fixes |
 | **Volledige LU2-score** | Nee — PoC, pentests, PR #16 ontbreken nog |
 
 PR #15 levert de OTAP-pipeline, CI-validatie, security-tooling en audit-documentatie. Na deze review zijn CI-fouten opgelost via PoC-scope tests; documentatie-claims over SonarCloud en Snyk zijn gecorrigeerd.
