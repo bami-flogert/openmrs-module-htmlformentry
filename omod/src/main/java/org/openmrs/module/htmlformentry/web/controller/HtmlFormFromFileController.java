@@ -129,13 +129,31 @@ public class HtmlFormFromFileController {
 	 * when it does not yet exist so a fresh install has a safe, empty drop-zone instead of falling
 	 * back to the (secret-bearing) working/application directory.
 	 */
-	private File getPreviewBaseDirectory() {
-		String configured = Context.getAdministrationService().getGlobalProperty(GP_PREVIEW_BASE_DIR);
+	File getPreviewBaseDirectory() {
+		return resolveBaseDirectory(getConfiguredBaseDirectory(), getApplicationDataDirectory());
+	}
+
+	/** Seam around the global-property lookup so the base-dir resolution can be unit-tested. */
+	String getConfiguredBaseDirectory() {
+		return Context.getAdministrationService().getGlobalProperty(GP_PREVIEW_BASE_DIR);
+	}
+
+	/** Seam around the application-data-directory lookup so it can be stubbed in tests. */
+	String getApplicationDataDirectory() {
+		return OpenmrsUtil.getApplicationDataDirectory();
+	}
+
+	/**
+	 * Pure resolution of the preview base directory, split out from the static OpenMRS lookups so it
+	 * can be unit-tested. Uses {@code configured} when set, otherwise an {@code htmlformentry} folder
+	 * inside {@code applicationDataDirectory}, and creates the directory when it does not yet exist.
+	 */
+	File resolveBaseDirectory(String configured, String applicationDataDirectory) {
 		File base;
 		if (StringUtils.hasText(configured)) {
 			base = new File(configured);
 		} else {
-			base = new File(OpenmrsUtil.getApplicationDataDirectory(), "htmlformentry");
+			base = new File(applicationDataDirectory, "htmlformentry");
 		}
 		if (!base.exists()) {
 			base.mkdirs();

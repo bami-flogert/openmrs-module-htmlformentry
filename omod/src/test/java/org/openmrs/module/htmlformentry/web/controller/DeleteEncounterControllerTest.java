@@ -1,38 +1,65 @@
 package org.openmrs.module.htmlformentry.web.controller;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.openmrs.api.EncounterService;
-import org.openmrs.api.context.Context;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.openmrs.Encounter;
+import org.openmrs.Patient;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.view.RedirectView;
 
 /**
- * Unit tests for the HFE-02 (CSRF / missing-authorization) and HFE-03 (open-redirect) mitigations in
- * {@link DeleteEncounterController}. The pure helpers are tested directly; the early-exit branches of
- * {@code handleRequest} are driven with a mocked static {@link Context} so no full context-sensitive
- * test has to be booted. Only {@code Context} is prepared for PowerMock, so the controller under test
- * is still instrumented normally for coverage.
+ * Unit tests for the HFE-02 (CSRF / missing-authorization / IDOR) and HFE-03 (open-redirect)
+ * mitigations in {@link DeleteEncounterController}. The pure defence helpers are tested directly; the
+ * {@code handleRequest} flow is exercised through a subclass that overrides the OpenMRS seams, so no
+ * full context-sensitive test has to be booted.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(Context.class)
 public class DeleteEncounterControllerTest {
 
 	private final DeleteEncounterController controller = new DeleteEncounterController();
+
+	/** Subclass that stubs the static-OpenMRS seams so the request flow can run without a context. */
+	private static class TestableController extends DeleteEncounterController {
+
+		private Encounter encounter;
+
+		private boolean voided;
+
+		@Override
+		void requireDeletePrivilege() {
+			// no-op: privilege enforcement is provided by the OpenMRS core at runtime
+		}
+
+		@Override
+		Encounter findEncounter(Integer encounterId) {
+			return encounter;
+		}
+
+		@Override
+		void voidEncounter(Encounter enc, Integer htmlFormId, String reason) {
+			voided = true;
+		}
+	}
+
+	private static HttpServletRequest sameOriginRequest() {
+		HttpServletRequest request = mock(HttpServletRequest.class);
+		when(request.getHeader("Origin")).thenReturn("http://localhost:8080");
+		when(request.getServerName()).thenReturn("localhost");
+		when(request.getContextPath()).thenReturn("/openmrs");
+		return request;
+	}
 
 	// ---------------------------------------------------------------------
 	// HFE-03 — isSafeRelativeUrl (open-redirect defence)
@@ -125,19 +152,19 @@ public class DeleteEncounterControllerTest {
 	}
 
 	// ---------------------------------------------------------------------
-	// handleRequest — early-exit security branches
+	// handleRequest — full flow through the overridden seams
 	// ---------------------------------------------------------------------
 
 	@Test
 	public void handleRequest_blocksCrossSitePostWithForbidden() throws Exception {
-		mockStatic(Context.class);
+		TestableController testable = new TestableController();
 		HttpServletRequest request = mock(HttpServletRequest.class);
 		HttpServletResponse response = mock(HttpServletResponse.class);
 		// Cross-site: Origin host does not match the server name.
 		when(request.getHeader("Origin")).thenReturn("http://evil.example.com");
 		when(request.getServerName()).thenReturn("localhost");
 
-		ModelAndView result = controller.handleRequest(3, 6, "reason", null, request, response);
+		ModelAndView result = testable.handleRequest(3, 6, "reason", null, request, response);
 
 		assertNull(result);
 		verify(response).sendError(eq(HttpServletResponse.SC_FORBIDDEN), anyString());
@@ -145,21 +172,53 @@ public class DeleteEncounterControllerTest {
 
 	@Test
 	public void handleRequest_returnsNotFoundForUnknownEncounter() throws Exception {
-		mockStatic(Context.class);
-		EncounterService encounterService = mock(EncounterService.class);
-		when(Context.getEncounterService()).thenReturn(encounterService);
-		when(encounterService.getEncounter(999)).thenReturn(null);
-
-		HttpServletRequest request = mock(HttpServletRequest.class);
+		TestableController testable = new TestableController();
+		testable.encounter = null;
 		HttpServletResponse response = mock(HttpServletResponse.class);
-		// Same-origin so the request passes the CSRF check and reaches the lookup.
-		when(request.getHeader("Origin")).thenReturn("http://localhost:8080");
-		when(request.getServerName()).thenReturn("localhost");
 
-		ModelAndView result = controller.handleRequest(999, 6, "reason", null, request, response);
+		ModelAndView result = testable.handleRequest(999, 6, "reason", null, sameOriginRequest(), response);
 
 		assertNull(result);
 		verify(response).sendError(eq(HttpServletResponse.SC_NOT_FOUND), anyString());
+	}
+
+	@Test
+	public void handleRequest_voidsAndRedirectsToSafeRelativeReturnUrl() throws Exception {
+		TestableController testable = new TestableController();
+		testable.encounter = encounterForPatient(7);
+		HttpServletResponse response = mock(HttpServletResponse.class);
+
+		ModelAndView result = testable.handleRequest(3, 6, "reason",
+		        "/patientDashboard.form?patientId=7", sameOriginRequest(), response);
+
+		assertTrue(testable.voided);
+		assertEquals("/patientDashboard.form?patientId=7", redirectUrl(result));
+		verify(response, never()).sendError(eq(HttpServletResponse.SC_FORBIDDEN), anyString());
+	}
+
+	@Test
+	public void handleRequest_replacesUnsafeReturnUrlWithDashboard() throws Exception {
+		TestableController testable = new TestableController();
+		testable.encounter = encounterForPatient(7);
+		HttpServletResponse response = mock(HttpServletResponse.class);
+
+		ModelAndView result = testable.handleRequest(3, 6, "reason",
+		        "https://evil.example.com/phish", sameOriginRequest(), response);
+
+		// The attacker-controlled URL is dropped in favour of the internal dashboard path.
+		assertEquals("/openmrs/patientDashboard.form?patientId=7", redirectUrl(result));
+	}
+
+	private static Encounter encounterForPatient(Integer patientId) {
+		Patient patient = mock(Patient.class);
+		when(patient.getPatientId()).thenReturn(patientId);
+		Encounter encounter = mock(Encounter.class);
+		when(encounter.getPatient()).thenReturn(patient);
+		return encounter;
+	}
+
+	private static String redirectUrl(ModelAndView result) {
+		return ((RedirectView) result.getView()).getUrl();
 	}
 
 }

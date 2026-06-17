@@ -4,31 +4,19 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import java.io.File;
 
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.openmrs.api.AdministrationService;
-import org.openmrs.api.context.Context;
-import org.openmrs.util.OpenmrsUtil;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * Unit tests for the HFE-01 (arbitrary file read / path traversal) mitigation in
- * {@link HtmlFormFromFileController#resolveSafePreviewFile(String)}. The static OpenMRS lookups used
- * by the base-directory resolution ({@link Context}, {@link OpenmrsUtil}) are mocked so the path
- * confinement logic can be tested in isolation. Only those dependency classes are prepared for
- * PowerMock — the controller itself is loaded normally and remains instrumented for coverage.
+ * {@link HtmlFormFromFileController}. The pure base-directory resolution is tested directly, and the
+ * path-confinement logic is exercised through a subclass that stubs the two OpenMRS lookup seams, so
+ * neither a running OpenMRS context nor static mocking is required.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ Context.class, OpenmrsUtil.class })
 public class HtmlFormFromFileControllerTest {
 
 	@Rule
@@ -36,74 +24,125 @@ public class HtmlFormFromFileControllerTest {
 
 	private final HtmlFormFromFileController controller = new HtmlFormFromFileController();
 
-	/** Points the configurable global property at the given directory. */
-	private void useConfiguredBaseDir(File baseDir) {
-		mockStatic(Context.class);
-		AdministrationService adminService = mock(AdministrationService.class);
-		when(Context.getAdministrationService()).thenReturn(adminService);
-		when(adminService.getGlobalProperty(HtmlFormFromFileController.GP_PREVIEW_BASE_DIR))
-		        .thenReturn(baseDir.getAbsolutePath());
+	/** Subclass that supplies the base-directory inputs instead of looking them up via OpenMRS. */
+	private static class TestableController extends HtmlFormFromFileController {
+
+		private String configured;
+
+		private String appDataDir;
+
+		@Override
+		String getConfiguredBaseDirectory() {
+			return configured;
+		}
+
+		@Override
+		String getApplicationDataDirectory() {
+			return appDataDir;
+		}
 	}
 
 	// ---------------------------------------------------------------------
-	// Rejected (unsafe) inputs — return null before any file system access
+	// resolveBaseDirectory — base directory selection + on-demand creation
+	// ---------------------------------------------------------------------
+
+	@Test
+	public void resolveBaseDirectory_usesConfiguredDirectoryAndCreatesIt() {
+		File configured = new File(tempFolder.getRoot(), "custom-forms");
+
+		File base = controller.resolveBaseDirectory(configured.getAbsolutePath(), null);
+
+		assertEquals(configured, base);
+		assertTrue(base.isDirectory());
+	}
+
+	@Test
+	public void resolveBaseDirectory_fallsBackToApplicationDataDirectory() {
+		String appData = tempFolder.getRoot().getAbsolutePath();
+
+		File base = controller.resolveBaseDirectory(null, appData);
+
+		assertEquals(new File(appData, "htmlformentry"), base);
+		assertTrue(base.isDirectory());
+	}
+
+	@Test
+	public void resolveBaseDirectory_treatsBlankConfiguredValueAsUnset() {
+		String appData = tempFolder.getRoot().getAbsolutePath();
+
+		File base = controller.resolveBaseDirectory("   ", appData);
+
+		assertEquals(new File(appData, "htmlformentry"), base);
+	}
+
+	@Test
+	public void resolveBaseDirectory_keepsExistingDirectory() throws Exception {
+		File existing = tempFolder.newFolder("already-there");
+
+		File base = controller.resolveBaseDirectory(existing.getAbsolutePath(), null);
+
+		assertEquals(existing, base);
+		assertTrue(base.isDirectory());
+	}
+
+	// ---------------------------------------------------------------------
+	// getPreviewBaseDirectory — wires the configured/app-data seams together
+	// ---------------------------------------------------------------------
+
+	@Test
+	public void getPreviewBaseDirectory_usesConfiguredValueWhenPresent() throws Exception {
+		TestableController testable = new TestableController();
+		File configured = tempFolder.newFolder("configured-base");
+		testable.configured = configured.getAbsolutePath();
+
+		assertEquals(configured, testable.getPreviewBaseDirectory());
+	}
+
+	// ---------------------------------------------------------------------
+	// resolveSafePreviewFile — rejected (unsafe) inputs
 	// ---------------------------------------------------------------------
 
 	@Test
 	public void resolveSafePreviewFile_rejectsNull() {
-		assertNull(controller.resolveSafePreviewFile(null));
+		assertNull(newTestable().resolveSafePreviewFile(null));
 	}
 
 	@Test
 	public void resolveSafePreviewFile_rejectsBlank() {
-		assertNull(controller.resolveSafePreviewFile("   "));
+		assertNull(newTestable().resolveSafePreviewFile("   "));
 	}
 
 	@Test
 	public void resolveSafePreviewFile_rejectsParentTraversal() {
-		assertNull(controller.resolveSafePreviewFile("../../openmrs-server.properties"));
+		assertNull(newTestable().resolveSafePreviewFile("../../openmrs-server.properties"));
 	}
 
 	@Test
 	public void resolveSafePreviewFile_rejectsAbsolutePath() {
 		// Build an OS-independent absolute path (e.g. "C:\secret.xml" or "/secret.xml").
 		File absolute = new File(File.listRoots()[0], "secret.xml");
-		assertNull(controller.resolveSafePreviewFile(absolute.getAbsolutePath()));
+		assertNull(newTestable().resolveSafePreviewFile(absolute.getAbsolutePath()));
 	}
 
 	// ---------------------------------------------------------------------
-	// Accepted inputs — confined to the whitelisted base directory
+	// resolveSafePreviewFile — accepted input confined to the base directory
 	// ---------------------------------------------------------------------
 
 	@Test
-	public void resolveSafePreviewFile_returnsFileInsideConfiguredBaseDir() throws Exception {
-		File baseDir = tempFolder.newFolder("forms");
-		useConfiguredBaseDir(baseDir);
+	public void resolveSafePreviewFile_returnsFileInsideBaseDirectory() throws Exception {
+		TestableController testable = newTestable();
 
-		File resolved = controller.resolveSafePreviewFile("probe.xml");
+		File resolved = testable.resolveSafePreviewFile("probe.xml");
 
 		assertNotNull(resolved);
-		assertEquals(new File(baseDir, "probe.xml").getCanonicalFile(), resolved);
+		assertEquals(new File(testable.getPreviewBaseDirectory(), "probe.xml").getCanonicalFile(), resolved);
 	}
 
-	@Test
-	public void resolveSafePreviewFile_fallsBackToAppDataDirAndCreatesIt() {
-		mockStatic(Context.class);
-		AdministrationService adminService = mock(AdministrationService.class);
-		when(Context.getAdministrationService()).thenReturn(adminService);
-		// No global property configured -> default <appdata>/htmlformentry base directory.
-		when(adminService.getGlobalProperty(HtmlFormFromFileController.GP_PREVIEW_BASE_DIR))
-		        .thenReturn(null);
-
-		File appDataDir = tempFolder.getRoot();
-		mockStatic(OpenmrsUtil.class);
-		when(OpenmrsUtil.getApplicationDataDirectory()).thenReturn(appDataDir.getAbsolutePath());
-
-		File resolved = controller.resolveSafePreviewFile("note.xml");
-
-		assertNotNull(resolved);
-		// The default base directory must have been created on demand.
-		assertTrue(new File(appDataDir, "htmlformentry").isDirectory());
+	/** A controller whose base directory is a fresh temp folder (configured via the app-data seam). */
+	private TestableController newTestable() {
+		TestableController testable = new TestableController();
+		testable.appDataDir = tempFolder.getRoot().getAbsolutePath();
+		return testable;
 	}
 
 }

@@ -37,7 +37,7 @@ public class DeleteEncounterController {
                                       HttpServletRequest request, HttpServletResponse response) throws Exception {
         // HFE-02 (CWE-862): voiding an encounter requires the proper privilege; a bare
         // logged-in session is no longer sufficient.
-        Context.requirePrivilege("Delete Encounters");
+        requireDeletePrivilege();
 
         // HFE-02 (CWE-352): reject cross-site POSTs. Only same-origin requests are honoured,
         // which blocks the tokenless cross-site form used in the CSRF PoC.
@@ -46,17 +46,14 @@ public class DeleteEncounterController {
             return null;
         }
 
-        Encounter enc = Context.getEncounterService().getEncounter(encounterId);
+        Encounter enc = findEncounter(encounterId);
         // HFE-02 (CWE-639): fail closed on an unknown/invalid encounterId instead of NPE-ing.
         if (enc == null) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "Encounter not found.");
             return null;
         }
         Integer ptId = enc.getPatient().getPatientId();
-        HtmlFormEntryService hfes = Context.getService(HtmlFormEntryService.class);
-        HtmlForm form = hfes.getHtmlForm(htmlFormId);
-        HtmlFormEntryUtil.voidEncounter(enc, form, reason);
-        Context.getEncounterService().saveEncounter(enc);
+        voidEncounter(enc, htmlFormId, reason);
 
         // HFE-03 (CWE-601): never redirect to an attacker-controlled absolute/external URL.
         // Only a relative path within this application is allowed; anything else falls back
@@ -65,6 +62,31 @@ public class DeleteEncounterController {
         	returnUrl = request.getContextPath() + "/patientDashboard.form?patientId=" + ptId;
         }
         return new ModelAndView(new RedirectView(returnUrl));
+    }
+
+    /**
+     * Seam around the privilege check so it can be exercised without booting a full OpenMRS context.
+     */
+    void requireDeletePrivilege() {
+        Context.requirePrivilege("Delete Encounters");
+    }
+
+    /**
+     * Seam around the encounter lookup so the controller flow can be unit-tested without a context.
+     */
+    Encounter findEncounter(Integer encounterId) {
+        return Context.getEncounterService().getEncounter(encounterId);
+    }
+
+    /**
+     * Seam that performs the actual void + save. Kept separate so the request-handling and security
+     * branches can be unit-tested without touching the persistence layer.
+     */
+    void voidEncounter(Encounter enc, Integer htmlFormId, String reason) {
+        HtmlFormEntryService hfes = Context.getService(HtmlFormEntryService.class);
+        HtmlForm form = hfes.getHtmlForm(htmlFormId);
+        HtmlFormEntryUtil.voidEncounter(enc, form, reason);
+        Context.getEncounterService().saveEncounter(enc);
     }
 
     /**
