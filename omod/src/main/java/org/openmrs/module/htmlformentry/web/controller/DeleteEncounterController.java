@@ -73,7 +73,7 @@ public class DeleteEncounterController {
      * mismatching header is treated as cross-site and rejected, which stops the tokenless
      * cross-site form POST used by the CSRF proof-of-concept.
      */
-    private boolean isSameOrigin(HttpServletRequest request) {
+    boolean isSameOrigin(HttpServletRequest request) {
         String source = request.getHeader("Origin");
         if (!StringUtils.hasText(source)) {
             source = request.getHeader("Referer");
@@ -96,7 +96,7 @@ public class DeleteEncounterController {
      * ("://") and must not contain a backslash (which some browsers normalise to '/'). Everything
      * else — including absolute external URLs — is rejected so the caller uses the safe default.
      */
-    private boolean isSafeRelativeUrl(String url) {
+    boolean isSafeRelativeUrl(String url) {
         if (!StringUtils.hasText(url)) {
             return false;
         }
