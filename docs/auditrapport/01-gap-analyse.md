@@ -35,15 +35,15 @@
 | 6 | UI-niveau toegangscontrole op patiëntformulieren | ✅ Aanwezig | `patientHtmlForms.jsp:3` — `<openmrs:hasPrivilege privilege="Form Entry">` |
 | 7 | Rolgebaseerde toegangscontrole op API-laag | ⚠️ Gedeeltelijk | Service-methoden in `HtmlFormEntryServiceImpl` bevatten geen `@Authorized`-annotaties; handhaving verloopt uitsluitend via de OpenMRS-kerninfrastructuur |
 | 8 | Beveiliging van REST/DWR-eindpunten | ⚠️ Gedeeltelijk | `config.xml:98-114` — DWR-methoden zijn geconfigureerd, maar er zijn geen expliciete privilege-guards op `DWRHtmlFormEntryService` zichtbaar buiten de sessiecontrole |
-| 9 | Documentatie toegangsbeheerbeleid | ⚠️ Gedeeltelijk | [`docs/security.md`](../security.md) — vulnerability disclosure; geen privilege-matrix of OTAP-toegangsbeleid (zie [`otap.md`](../otap.md)) |
+| 9 | Documentatie toegangsbeheerbeleid | ⚠️ Gedeeltelijk | [`docs/security.md`](../security.md) — vulnerability disclosure + privilege-matrix; OTAP-toegang in [`otap.md`](../otap.md) |
 
 ### Gebreken
 
 - **Gebrek:** `@Authorized`-annotaties ontbreken op serviceklassen — bij een misconfiguratie van de beveiligingscontext zou de API-laag toegankelijk kunnen zijn zonder privilege-check.  
   **Verbetering:** Voeg `@Authorized({PrivilegeConstants.MANAGE_FORMS})` toe aan schrijfmethoden in `HtmlFormEntryServiceImpl`.
 
-- **Gebrek:** Geen gedocumenteerd overzicht van welke rollen welke privileges vereisen.  
-  **Verbetering:** Maak een privilege-matrix op in `docs/` of in `config.xml` als commentaar. OTAP- en pipeline-toegang is wel gedocumenteerd in [`otap.md`](../otap.md) en [`02-pipeline-compliance.md`](02-pipeline-compliance.md).
+- **Gebrek:** Geen mapping van rollen naar privileges — de module documenteert wel vereiste privileges per functie, maar niet welke standaardrollen die krijgen (instellingsbeleid).  
+  **Verbetering:** Privilege-matrix staat in [`security.md`](../security.md); rol-toewijzing documenteren in implementatiehandleiding van de zorginstelling.
 
 ---
 
@@ -118,6 +118,6 @@
 
 | Control | Status | Kritieke hiaten |
 |---------|--------|-----------------|
-| A.8.3 Toegangsbeveiliging | ⚠️ Gedeeltelijk | Ontbrekende `@Authorized` op service-laag; geen privilege-matrix |
+| A.8.3 Toegangsbeveiliging | ⚠️ Gedeeltelijk | Ontbrekende `@Authorized` op service-laag; geen rol→privilege-mapping (privilege-matrix wel gedocumenteerd) |
 | A.8.5 Authenticatie | ⚠️ Gedeeltelijk | CSRF alleen op `deleteEncounter` (same-origin); geen tokens modulebreed; sessiebeheer niet modulespecifiek geconfigureerd |
 | A.8.15 Logging | ⚠️ Gedeeltelijk | Geen retentiebeleid; geen log-integriteitsbeveiliging; geen dedicated security logger; rest-risico XML in ERROR-log |
