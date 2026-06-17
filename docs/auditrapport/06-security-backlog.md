@@ -16,6 +16,8 @@ De SCA-scan uit de CI-pipeline vond over alle Maven-submodules samen **223 uniek
 
 **Dependency-context:** bijna alle Maven-bevindingen komen transitief binnen via `org.openmrs.api:openmrs-api@1.9.9` en `org.openmrs.web:openmrs-web@1.9.9` (scope `provided`). Het OpenMRS-platform levert deze libraries tijdens runtime; de module bundelt ze niet zelf. Hoe groot het risico echt is hangt dus af van de platformversie waarop de module draait. De scan tegen de minimaal ondersteunde versie (1.9.9) is het worst-case scenario. De gebundelde JavaScript-libraries zitten wél in het eigen omod-bestand. Daar is de module dus zelf verantwoordelijk voor.
 
+**ID-nummering:** de IDs in dit register (`HFE-001`, `HFE-002`, …) zijn **CVE/dependency-backlog**-items. Pentest-bevindingen gebruiken een aparte reeks (`HFE-01`, `HFE-02`, …) in [`../pentest/README.md`](../pentest/README.md). Die twee reeksen zijn niet hetzelfde.
+
 ## 6.2 Legenda
 
 | Veld | Betekenis |
