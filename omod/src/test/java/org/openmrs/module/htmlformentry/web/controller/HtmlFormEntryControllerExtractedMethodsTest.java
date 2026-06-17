@@ -8,9 +8,7 @@ import org.openmrs.Encounter;
 import org.openmrs.Form;
 import org.openmrs.Patient;
 import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
-import org.openmrs.module.htmlformentry.HtmlForm;
 import org.openmrs.module.htmlformentry.compatibility.EncounterServiceCompatibility;
-import org.openmrs.module.htmlformentry.web.controller.HtmlFormEntryController.FormEntryResolution;
 import org.powermock.reflect.Whitebox;
 import org.springframework.mock.web.MockHttpServletRequest;
 
@@ -18,25 +16,16 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 /**
- * Unit tests for the small pieces extracted from
- * {@link HtmlFormEntryController#getFormEntrySession}.
- * <p/>
- * These tests cover the methods that have no dependency on the static service-locators
- * ({@code Context}, {@code HtmlFormEntryUtil}) and therefore don't need PowerMock's
- * {@code mockStatic}. {@link Whitebox#setInternalState} is plain reflection (from
- * powermock-reflect) and does not require {@code @RunWith(PowerMockRunner.class)}.
- * <p/>
- * The methods that DO call {@code Context.*} / {@code HtmlFormEntryUtil.getService()}
- * statically are covered separately in {@link HtmlFormEntryControllerPowerMockTest}, which
- * needs {@code @RunWith(PowerMockRunner.class)}.
+ * Unit tests for methods extracted from {@link HtmlFormEntryController#getFormEntrySession}.
+ * End-to-end behaviour: {@link org.openmrs.htmlformentry.web.controller.HtmlFormEntryControllerTest} (T1-T9).
+ * resolveFormEntryContext paths that need Context are covered by characterization tests.
+ * Traceability: docs/03-teststrategie.md section 7.2b.
  */
-public class HtmlFormEntryControllerTest {
+public class HtmlFormEntryControllerExtractedMethodsTest {
 
     private final HtmlFormEntryController controller = new HtmlFormEntryController();
 
@@ -168,80 +157,5 @@ public class HtmlFormEntryControllerTest {
     @Test(expected = IllegalArgumentException.class)
     public void resolvePatientForSession_shouldThrow_whenEditModeAndNoPatient() {
         controller.resolvePatientForSession(null, Mode.EDIT, null, 2);
-    }
-
-    @Test
-    public void resolveFormEntryContext_shouldResolveFromEncounter_whenEncounterIdProvided() {
-        HtmlFormEntryController spyController = spy(new HtmlFormEntryController());
-
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.addParameter("encounterId", "5");
-
-        Patient patient = new Patient();
-        patient.setPatientId(7);
-
-        Encounter encounter = new Encounter();
-        encounter.setPatient(patient);
-
-        HtmlForm htmlForm = new HtmlForm();
-
-        doReturn(encounter).when(spyController).resolveEncounterById("5");
-        doReturn(htmlForm).when(spyController).resolveHtmlFormForEncounter(null, encounter);
-
-        FormEntryResolution result = spyController.resolveFormEntryContext(request, null, null, null, null);
-
-        assertThat(result.getEncounter(), is(encounter));
-        assertThat(result.getPatient(), is(patient));
-        assertThat(result.getHtmlForm(), is(htmlForm));
-        assertThat(result.getPatientId(), is(7));
-        assertThat(result.getPersonId(), is(7));
-    }
-
-    @Test
-    public void resolveFormEntryContext_shouldResolvePatientAndHtmlForm_whenNoEncounterIdAndNoWhich() {
-        HtmlFormEntryController spyController = spy(new HtmlFormEntryController());
-
-        MockHttpServletRequest request = new MockHttpServletRequest();
-
-        Patient patient = new Patient();
-        HtmlForm htmlForm = new HtmlForm();
-        htmlForm.setForm(new Form());
-
-        doReturn(patient).when(spyController).resolvePatient(9);
-        doReturn(htmlForm).when(spyController).resolveHtmlForm(3, 4);
-
-        FormEntryResolution result = spyController.resolveFormEntryContext(request, 4, 3, null, 9);
-
-        assertThat(result.getPatient(), is(patient));
-        assertThat(result.getHtmlForm(), is(htmlForm));
-        assertNull(result.getEncounter());
-        assertThat(result.getPersonId(), is(9));
-        assertThat(result.getPatientId(), is(9));
-    }
-
-    @Test
-    public void resolveFormEntryContext_shouldResolveWhichEncounter_whenWhichProvided() {
-        HtmlFormEntryController spyController = spy(new HtmlFormEntryController());
-
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.addParameter("which", "last");
-
-        Patient patient = new Patient();
-        Form form = new Form();
-        HtmlForm htmlForm = new HtmlForm();
-        htmlForm.setForm(form);
-        Encounter encounter = new Encounter();
-
-        doReturn(patient).when(spyController).resolvePatient(5);
-        doReturn(htmlForm).when(spyController).resolveHtmlForm(null, null);
-        doReturn(encounter).when(spyController).resolveWhichEncounter("last", patient, form);
-
-        FormEntryResolution result = spyController.resolveFormEntryContext(request, null, null, 5, null);
-
-        assertThat(result.getEncounter(), is(encounter));
-        assertThat(result.getPatient(), is(patient));
-        assertThat(result.getHtmlForm(), is(htmlForm));
-        assertThat(result.getPersonId(), is(5));
-        assertNull(result.getPatientId());
     }
 }

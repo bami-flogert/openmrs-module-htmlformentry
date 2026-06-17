@@ -8,7 +8,9 @@ Gerelateerd: [`03-teststrategie.md`](03-teststrategie.md) §7.4 · [`06-verantwo
 
 ## Context
 
-Characterization tests op `HtmlFormEntryController.getFormEntrySession` (CC 52) vóór de geplande Extract Class-refactor. Alle paden uit de traceability-matrix (Must + Should) zijn geïmplementeerd.
+Characterization tests op `HtmlFormEntryController.getFormEntrySession` (CC 52) vóór de Extract Method-refactor. Alle paden uit de traceability-matrix (Must + Should) zijn geïmplementeerd.
+
+**Na merge refactor-branch (juni 2026):** de characterization tests (`HtmlFormEntryControllerTest`, T1–T9) zijn **ongewijzigd** gebleven en slagen nog steeds als regressievangnet. Aanvullende unit tests staan in `HtmlFormEntryControllerExtractedMethodsTest` — zie [`03-teststrategie.md`](03-teststrategie.md) §7.2b.
 
 ---
 
@@ -17,7 +19,7 @@ Characterization tests op `HtmlFormEntryController.getFormEntrySession` (CC 52) 
 | | AI (Cursor) | Mens (team) |
 |---|-------------|-------------|
 | **Wat** | Test-skeleton, pad-mapping uit flowchart §7.3, assertie-voorstellen, analyse OpenMRS-testsetup | Opdracht, review assertions, Maven-run, fixture-keuzes (`simplestForm.xml`, `TestingApplicationContext.xml`) |
-| **Validatie** | — | `mvn -pl omod test verify` → **19/19 groen** |
+| **Validatie** | — | `mvn -pl omod test verify` → **34/34 groen** (10 characterization + 15 extract unit tests) |
 
 ---
 
