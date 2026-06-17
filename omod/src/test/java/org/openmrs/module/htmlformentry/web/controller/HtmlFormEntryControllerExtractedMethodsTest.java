@@ -8,7 +8,9 @@ import org.openmrs.Encounter;
 import org.openmrs.Form;
 import org.openmrs.Patient;
 import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
+import org.openmrs.module.htmlformentry.HtmlForm;
 import org.openmrs.module.htmlformentry.compatibility.EncounterServiceCompatibility;
+import org.openmrs.module.htmlformentry.web.controller.HtmlFormEntryController.FormEntryResolution;
 import org.powermock.reflect.Whitebox;
 import org.springframework.mock.web.MockHttpServletRequest;
 
@@ -157,5 +159,99 @@ public class HtmlFormEntryControllerExtractedMethodsTest {
     @Test(expected = IllegalArgumentException.class)
     public void resolvePatientForSession_shouldThrow_whenEditModeAndNoPatient() {
         controller.resolvePatientForSession(null, Mode.EDIT, null, 2);
+    }
+
+    @Test
+    public void resolveFormEntryContext_shouldResolveFromEncounter_whenEncounterIdProvided() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addParameter("encounterId", "5");
+
+        Patient patient = new Patient();
+        patient.setPatientId(7);
+
+        final Encounter encounter = new Encounter();
+        encounter.setPatient(patient);
+
+        final HtmlForm htmlForm = new HtmlForm();
+        HtmlFormEntryController testController = new HtmlFormEntryController() {
+            @Override
+            Encounter resolveEncounterById(String encounterId) {
+                return encounter;
+            }
+            @Override
+            HtmlForm resolveHtmlFormForEncounter(Integer formId, Encounter resolvedEncounter) {
+                return htmlForm;
+            }
+        };
+
+        FormEntryResolution result = testController.resolveFormEntryContext(request, null, null, null, null);
+
+        assertThat(result.getEncounter(), is(encounter));
+        assertThat(result.getPatient(), is(patient));
+        assertThat(result.getHtmlForm(), is(htmlForm));
+        assertThat(result.getPatientId(), is(7));
+        assertThat(result.getPersonId(), is(7));
+    }
+
+    @Test
+    public void resolveFormEntryContext_shouldResolvePatientAndHtmlForm_whenNoEncounterIdAndNoWhich() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+
+        final Patient patient = new Patient();
+        final HtmlForm htmlForm = new HtmlForm();
+        htmlForm.setForm(new Form());
+
+        HtmlFormEntryController testController = new HtmlFormEntryController() {
+            @Override
+            Patient resolvePatient(Integer personId) {
+                return patient;
+            }
+            @Override
+            HtmlForm resolveHtmlForm(Integer htmlFormId, Integer formId) {
+                return htmlForm;
+            }
+        };
+
+        FormEntryResolution result = testController.resolveFormEntryContext(request, 4, 3, null, 9);
+
+        assertThat(result.getPatient(), is(patient));
+        assertThat(result.getHtmlForm(), is(htmlForm));
+        assertNull(result.getEncounter());
+        assertThat(result.getPersonId(), is(9));
+        assertThat(result.getPatientId(), is(9));
+    }
+
+    @Test
+    public void resolveFormEntryContext_shouldResolveWhichEncounter_whenWhichProvided() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addParameter("which", "last");
+
+        final Patient patient = new Patient();
+        final Form form = new Form();
+        final HtmlForm htmlForm = new HtmlForm();
+        htmlForm.setForm(form);
+        final Encounter encounter = new Encounter();
+        HtmlFormEntryController testController = new HtmlFormEntryController() {
+            @Override
+            Patient resolvePatient(Integer personId) {
+                return patient;
+            }
+            @Override
+            HtmlForm resolveHtmlForm(Integer htmlFormId, Integer formId) {
+                return htmlForm;
+            }
+            @Override
+            Encounter resolveWhichEncounter(String which, Patient resolvedPatient, Form resolvedForm) {
+                return encounter;
+            }
+        };
+
+        FormEntryResolution result = testController.resolveFormEntryContext(request, null, null, 5, null);
+
+        assertThat(result.getEncounter(), is(encounter));
+        assertThat(result.getPatient(), is(patient));
+        assertThat(result.getHtmlForm(), is(htmlForm));
+        assertThat(result.getPersonId(), is(5));
+        assertNull(result.getPatientId());
     }
 }
