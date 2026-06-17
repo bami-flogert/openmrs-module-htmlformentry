@@ -167,9 +167,9 @@ RCE via deserialisatie), **HFE-003** (gebundelde jQuery, DOM-XSS) en **HFE-004**
 
 ---
 
-## 5. SBOM & Supply Chain Security
+## 5. SBOM & supply chain-beveiliging
 
-> _In te vullen bij finalisatie._ Overzicht van afhankelijkheden, verouderde/kwetsbare componenten (o.a. MySQL 5.6, JDK 8) en bescherming van de keten.
+Overzicht van afhankelijkheden, verouderde/kwetsbare componenten (o.a. MySQL 5.6, JDK 8) en maatregelen ter bescherming van de keten. Detail per component: [`07-patchadvies.md`](07-patchadvies.md); vollediger register: [`06-security-backlog.md`](06-security-backlog.md).
 
 **Huidige pipeline-maatregelen (bewijs):**
 

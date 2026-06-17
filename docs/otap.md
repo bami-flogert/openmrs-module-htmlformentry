@@ -16,7 +16,7 @@
 | [`auditrapport/01-gap-analyse.md`](auditrapport/01-gap-analyse.md) | **Bijlage A** — gap-analyse module-code (A.8.3 / A.8.5 / A.8.15) |
 | [`module-keuze.md`](module-keuze.md) | Motivatie modulekeuze en NEN-7510-relevantie |
 | [`onderhoudbaarheid/01-nfr-onderhoudbaarheid.md`](onderhoudbaarheid/01-nfr-onderhoudbaarheid.md) | JaCoCo-coverage en quality gates (NFR-M5 / NFR-T1) |
-| [`security.md`](security.md) | Vulnerability disclosure policy |
+| [`security.md`](security.md) | Beveiligingsbeleid en kwetsbaarheidsmelding |
 | [`zizmor.md`](zizmor.md) | Lokale SAST-scan van GitHub Actions-workflows |
 
 Dit document beschrijft de **operationele OTAP-keten**: welke branches naar welke omgeving deployen, welke quality gates gelden en welke workflows betrokken zijn. Voor de compliance-mapping per NEN-control zie bijlage B.

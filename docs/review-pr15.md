@@ -1,5 +1,7 @@
 # Review PR #15 — gereedheid voor merge
 
+> **Historisch document** — momentopname van 15 juni 2026. De huidige projectstatus staat in [`auditrapport/00-auditrapport.md`](auditrapport/00-auditrapport.md) en [`pentest/README.md`](pentest/README.md). Gebruik dit bestand alleen als archief van de PR #15-review.
+
 **Datum:** 15 juni 2026  
 **Branch:** `acceptatie` → `main`  
 **Reviewer:** geautomatiseerde review conform merge-readiness plan

@@ -34,19 +34,19 @@ We vragen je redelijke tijd te geven om het probleem op te lossen voordat je het
 
 ---
 
-## Module security-documentatie
+## Beveiligingsdocumentatie module
 
 Deze module verwerkt klinische gegevens (AVG art. 9). Onderstaande documenten vullen dit beveiligingsbeleid aan met audit-, pentest- en pipeline-bewijs.
 
 | Document | Inhoud |
 |----------|--------|
-| [`auditrapport/00-auditrapport.md`](auditrapport/00-auditrapport.md) | Hoofdrapport security & compliance (NEN-7510) |
+| [`auditrapport/00-auditrapport.md`](auditrapport/00-auditrapport.md) | Hoofdrapport beveiliging & compliance (NEN-7510) |
 | [`auditrapport/01-gap-analyse.md`](auditrapport/01-gap-analyse.md) | Gap-analyse controls A.8.3, A.8.5, A.8.15 |
 | [`auditrapport/06-security-backlog.md`](auditrapport/06-security-backlog.md) | CVE/dependency-backlog (HFE-001, …) |
 | [`auditrapport/07-patchadvies.md`](auditrapport/07-patchadvies.md) | Geprioriteerde patches (subset van Snyk-scan) |
 | [`pentest/README.md`](pentest/README.md) | Pentest-overzicht (HFE-01 t/m HFE-04) |
 | [`08-logging.md`](08-logging.md) | Logging- en privacybeleid (NFR-S1/S2) |
-| [`zizmor.md`](zizmor.md) | GitHub Actions security scan |
+| [`zizmor.md`](zizmor.md) | GitHub Actions-beveiligingsscan |
 | [`otap.md`](otap.md) | OTAP-pipeline en deploy-toegang |
 
 **ID-nummering:** pentest (`HFE-01`) en CVE-backlog (`HFE-001`) gebruiken dezelfde module-prefix maar verschillende reeksen — zie [`pentest/README.md#twee-id-systemen--niet-door-elkaar-halen`](pentest/README.md#twee-id-systemen--niet-door-elkaar-halen).
