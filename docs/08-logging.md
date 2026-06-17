@@ -113,11 +113,11 @@ Pentest-bewijs: [HFE-04 vóór](pentest/bevinding-hfe-04-voor.md) · [HFE-04 na]
 
 ## Buiten scope (PoC)
 
-- Log4j 1.x → 2.x migratie (backlog HFE-001)
+- Log4j 1.x → 2.x migratie (backlog **HFE-001**; zie [`auditrapport/06-security-backlog.md`](auditrapport/06-security-backlog.md))
 - `RollingFileAppender` + retentiebeleid
 - Centrale log-aggregatie / integriteitsbewaking
 - Aparte security-logger categorie
-- `HtmlFormEntryUtil` XML-body in ERROR-log (vervolgactie)
+- `HtmlFormEntryUtil` XML-body in ERROR-log (rest-risico; zie [`auditrapport/08-dpia-check.md`](auditrapport/08-dpia-check.md) §8.4.3 en [`auditrapport/01-gap-analyse.md`](auditrapport/01-gap-analyse.md) A.8.15 item #13)
 
 ---
 
