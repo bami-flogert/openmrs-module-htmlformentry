@@ -156,6 +156,72 @@ public class HtmlFormEntryControllerTest extends BaseModuleContextSensitiveTest 
 		invoke(null, null, null, null, null, null, null);
 	}
 
+	/**
+	 * Covers the UUID fallback branch in resolveEncounterById.
+	 */
+	@Test
+	public void shouldResolveEncounterByUuidWhenEncounterIdParameterIsUuid() throws Exception {
+		Encounter saved = saveEncounter(ENCOUNTER_DATE_RECENT);
+		request.setParameter("encounterId", saved.getUuid());
+
+		FormEntrySession session = invoke(null, null, null, null, null, null, null);
+
+		Assert.assertNotNull(session.getEncounter());
+		Assert.assertEquals(saved.getEncounterId(), session.getEncounter().getEncounterId());
+	}
+
+	/**
+	 * Covers the formId override branch in resolveHtmlFormForEncounter.
+	 */
+	@Test
+	public void shouldUseExplicitFormIdOverrideForEncounterSession() throws Exception {
+		Encounter saved = saveEncounter(ENCOUNTER_DATE_RECENT);
+
+		Form overrideForm = new Form();
+		overrideForm.setName("EncounterOverrideForm");
+		overrideForm.setVersion("1.0");
+		overrideForm.setPublished(true);
+		overrideForm.setEncounterType(Context.getEncounterService().getEncounterType(1));
+		overrideForm = Context.getFormService().saveForm(overrideForm);
+
+		HtmlForm overrideHtmlForm = new HtmlForm();
+		overrideHtmlForm.setForm(overrideForm);
+		overrideHtmlForm.setXmlData(new TestUtil().loadXmlFromFile(HTML_FORM_XML));
+		overrideHtmlForm = Context.getService(HtmlFormEntryService.class).saveHtmlForm(overrideHtmlForm);
+
+		request.setParameter("encounterId", String.valueOf(saved.getEncounterId()));
+
+		FormEntrySession session = invoke(null, overrideForm.getFormId(), null, null, null, null, null);
+
+		Assert.assertNotNull(session.getForm());
+		Assert.assertEquals(overrideHtmlForm.getForm().getFormId(), session.getForm().getFormId());
+	}
+
+	/**
+	 * Covers the encounter-form branch where no HtmlForm is mapped and no override formId is given.
+	 */
+	@Test(expected = IllegalArgumentException.class)
+	public void shouldThrowWhenEncounterFormHasNoHtmlFormAndNoOverrideFormId() throws Exception {
+		Form bareForm = new Form();
+		bareForm.setName("EncounterBareForm");
+		bareForm.setVersion("1.0");
+		bareForm.setPublished(true);
+		bareForm.setEncounterType(Context.getEncounterService().getEncounterType(1));
+		bareForm = Context.getFormService().saveForm(bareForm);
+
+		Encounter encounter = new Encounter();
+		encounter.setPatient(patient);
+		encounter.setForm(bareForm);
+		encounter.setEncounterDatetime(ENCOUNTER_DATE_RECENT);
+		encounter.setLocation(Context.getLocationService().getLocation(2));
+		encounter.setEncounterType(Context.getEncounterService().getEncounterType(1));
+		encounter = Context.getEncounterService().saveEncounter(encounter);
+
+		request.setParameter("encounterId", String.valueOf(encounter.getEncounterId()));
+
+		invoke(null, null, null, null, null, null, null);
+	}
+
 	// T7 — Must
 	@Test(expected = IllegalArgumentException.class)
 	public void shouldThrowWhenNoPatientInViewMode() throws Exception {

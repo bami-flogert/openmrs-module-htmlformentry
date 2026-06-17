@@ -188,17 +188,21 @@ Module-brede failures worden **eerlijk gerapporteerd** in [`04-testresultaten-ba
 | `api-tests` (volledig) | api-tests | 529 | ~70 errors | Module-baseline |
 | `DrugOrderTag1_10Test` | api-1.10 | 3 | NPE | Module-baseline |
 
-### 7.2 Nieuwe tests — `HtmlFormEntryControllerTest`
+### 7.2 Nieuwe tests — characterization + extract unit tests
 
-**Patroon:** volg [`HtmlFormAjaxValidationControllerTest`](../omod/src/test/java/org/openmrs/htmlformentry/web/controller/HtmlFormAjaxValidationControllerTest.java) — `BaseModuleContextSensitiveTest` + `MockHttpServletRequest`; roep `getFormEntrySession` direct aan.
+**Patroon characterization:** volg [`HtmlFormAjaxValidationControllerTest`](../omod/src/test/java/org/openmrs/htmlformentry/web/controller/HtmlFormAjaxValidationControllerTest.java) — `BaseModuleContextSensitiveTest` + `MockHttpServletRequest`; roep `getFormEntrySession` direct aan.
 
-**Volgorde:** characterization tests schrijven **vóór** Extract Class-refactor. Tests blijven bij refactor **ongewijzigd**.
+**Volgorde:** characterization tests schrijven **vóór** Extract Method-refactor. Characterization tests blijven bij refactor **ongewijzigd** en zijn leidend voor regressie.
 
 | Testklasse | Fase | Te testen gedrag | Aantal | Type |
 |------------|------|------------------|--------|------|
-| `HtmlFormEntryControllerTest` | Nu | Request-parameters → sessie/exception | 6–8 | Component |
+| `HtmlFormEntryControllerTest` | Vóór refactor | Request-parameters → sessie/exception (T1–T9) | 10 | Characterization / component |
+| `HtmlFormEntryControllerExtractedMethodsTest` | Na refactor | Geëxtraheerde controller-methoden (package-private; zelfde package als controller) | 15 | Unit (`omod`, package `org.openmrs.module.htmlformentry.web.controller`) |
+| `FormEntrySessionValidateNotModifiedSinceTimestampsTest` | Na refactor | Optimistic concurrency validatie | 8 | Unit (`api-tests`) |
 | `FormEntryRequestResolverTest` | Na PoC *(optioneel)* | Logica in geëxtraheerde klasse | 4–6 | Unit |
 | `FormEntrySessionFactoryTest` | Na PoC *(optioneel)* | Factory-keuze constructor | 2–3 | Unit |
+
+**§7.2b — Extract unit tests (na merge refactor-branch):** `HtmlFormEntryControllerExtractedMethodsTest` en `FormEntrySessionValidateNotModifiedSinceTimestampsTest` vullen de characterization-laag aan; ze mogen het gedrag in §7.4 niet tegenspreken. `resolveFormEntryContext` wordt niet apart unit-getest (vereist `Context`/spy); die paden zitten in de characterization tests T1–T4 en T2.
 
 ### 7.3 Paden — `getFormEntrySession` (prio 1)
 
@@ -296,7 +300,7 @@ Twee relevante jobs:
 
 | Job | Maven-commando | Dekking |
 |-----|----------------|---------|
-| `unit-test` | `mvn -B -pl omod test verify` | OMOD PoC-scope (controllers) |
+| `unit-test` | `mvn -B -pl omod -am test verify` | OMOD PoC-scope (controllers); `-am` bouwt `api` eerst |
 | `sonarcloud` | `mvn -B -pl api,api-tests,omod -am test verify` | OMOD + **logging audit tests** (`FormEntryAuditLogFormatterTest`, `FormEntrySessionLoggingTest`, `FormEntrySessionTest`, `PostSubmissionActionTagTest`) + JaCoCo voor SonarCloud |
 
 SonarCloud aggregeert JaCoCo uit `api`, `api-tests` en `omod` (`pom.xml` / `sonar-project.properties`).

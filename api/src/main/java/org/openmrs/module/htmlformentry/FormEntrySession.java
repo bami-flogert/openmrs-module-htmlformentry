@@ -1028,6 +1028,40 @@ public class FormEntrySession {
     }
 
     /**
+     * Optimistic-concurrency check: verifies that the underlying {@link HtmlForm} (and, if this
+     * session is based on an existing {@link Encounter}, that encounter) have not been modified
+     * since the timestamps the client obtained when it loaded the form-entry page.
+     * <p/>
+     * Moved here from
+     * {@code HtmlFormEntryController#getFormEntrySession} as part of the maintainability PoC
+     * (Move Method / SRP): this is domain-level validation about the session's own state, not
+     * controller/web concern.
+     *
+     * @param formModifiedTimestamp the form-modified timestamp the client is submitting back, or
+     *            {@code null} if the check should be skipped
+     * @param encounterModifiedTimestamp the encounter-modified timestamp the client is submitting
+     *            back, or {@code null} if the check should be skipped
+     * @throws RuntimeException if the form or encounter was modified after the given timestamps
+     *             were taken
+     */
+    public void validateNotModifiedSinceTimestamps(Long formModifiedTimestamp, Long encounterModifiedTimestamp) {
+        if (formModifiedTimestamp != null) {
+            if (!OpenmrsUtil.nullSafeEquals(formModifiedTimestamp, getFormModifiedTimestamp())) {
+                throw new RuntimeException(Context.getMessageSourceService().getMessage(
+                        "htmlformentry.error.formModifiedBeforeSubmission"));
+            }
+        }
+
+        if (encounter != null) {
+            if (encounterModifiedTimestamp != null
+                    && !OpenmrsUtil.nullSafeEquals(encounterModifiedTimestamp, getEncounterModifiedTimestamp())) {
+                throw new RuntimeException(Context.getMessageSourceService().getMessage(
+                        "htmlformentry.error.encounterModifiedBeforeSubmission"));
+            }
+        }
+    }
+
+    /**
      * Calculates the date an encounter was last modified by checking the creation and voided times
      * of all Obs and Orders associated with the Encounter
      *
