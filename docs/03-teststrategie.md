@@ -330,10 +330,10 @@ Twee relevante jobs:
 | Job          | Maven-commando                                  | Dekking                                                                                                                                                                          |
 | ------------ | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `unit-test`  | `mvn -B -pl omod -am test verify`               | OMOD PoC-scope (controllers); `-am` bouwt `api` eerst                                                                                                                            |
-| `sonarcloud` | `mvn -B -pl api,api-tests,omod -am test verify` | OMOD + **logging audit tests** (`FormEntryAuditLogFormatterTest`, `FormEntrySessionLoggingTest`, `FormEntrySessionTest`, `PostSubmissionActionTagTest`) + JaCoCo voor SonarCloud |
+| `sonarcloud` | `mvn -B -pl api,api-tests,omod -am test verify` + verify JaCoCo XML + `sonar:sonar` | OMOD + **logging audit tests** + JaCoCo; Sonar importeert `target/site/jacoco/jacoco.xml` per module |
 
 
-SonarCloud aggregeert JaCoCo uit `api`, `api-tests` en `omod` (`pom.xml` / `sonar-project.properties`).
+SonarCloud leest JaCoCo per module op het standaardpad `target/site/jacoco/jacoco.xml` (geen repo-root-paden in `pom.xml`). De job controleert aanwezigheid van de drie rapporten vóór de scan.
 
 ### 8.2 Metadata per testrun
 

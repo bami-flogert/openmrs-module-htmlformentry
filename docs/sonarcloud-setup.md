@@ -11,7 +11,7 @@ Documentatie van de **eenmalige externe inrichting** (SonarCloud + GitHub Secret
 
 | Bestand                                                   | Rol                                                                       |
 | --------------------------------------------------------- | ------------------------------------------------------------------------- |
-| `[sonar-project.properties](../sonar-project.properties)` | Org `bami-flogert`, project key, JaCoCo-paden, exclusions (`.github/`**)  |
+| `[sonar-project.properties](../sonar-project.properties)` | Org `bami-flogert`, project key, exclusions (`.github/**`); JaCoCo via standaardpad per module |
 | `[.github/workflows/ci.yml](../.github/workflows/ci.yml)` | Job `sonarcloud`: tests + `sonar:sonar` met `sonar.qualitygate.wait=true` |
 
 
@@ -55,9 +55,15 @@ Als de scan draait maar Maven eindigt met *QUALITY GATE STATUS: FAILED*, werkt `
 
 **Veelvoorkomend:** gewijzigde `.github/workflows/ci.yml` telt als new code — daarom `sonar.exclusions=.github/**` in `sonar-project.properties`.
 
-### JaCoCo niet geïmporteerd in scan
+### JaCoCo-import in Sonar-scan
 
-Als de log meldt *No coverage report can be found* / *No report imported*: de `sonarcloud`-job draait `test verify` maar genereert geen `jacoco.xml` op de paden in `sonar.coverage.jacoco.xmlReportPaths` vóór `sonar:sonar`. Coverage in SonarCloud is dan leeg; gebruik het **unit-test**-artifact (`jacoco-report-pr-<nr>`) of lokaal `omod/target/site/jacoco/`. Zie [`04-testresultaten-baseline.md`](04-testresultaten-baseline.md).
+Sonar leest per Maven-module standaard `target/site/jacoco/jacoco.xml` (gegenereerd door `jacoco:report` in de `verify`-fase). Geen custom `sonar.coverage.jacoco.xmlReportPaths` nodig.
+
+De `sonarcloud`-job in `ci.yml` bevat een stap **Verify JaCoCo reports exist** die controleert op `api`, `api-tests` en `omod` vóór `sonar:sonar`.
+
+**Eerdere fout (opgelost):** repo-root-paden (`omod/target/site/jacoco/jacoco.xml` in parent `pom.xml`) werden per module verkeerd opgelost — Sonar zocht `omod/omod/target/...` en logde *No report imported*. Fix: property verwijderd; standaardpad per module.
+
+Als import alsnog faalt: controleer CI-log op `OK: …/jacoco.xml` en `Reading report` in de Sonar-stap. Fallback: **unit-test**-artifact (`jacoco-report-pr-<nr>`) of lokaal `omod/target/site/jacoco/`. Zie [`04-testresultaten-baseline.md`](04-testresultaten-baseline.md).
 
 ---
 

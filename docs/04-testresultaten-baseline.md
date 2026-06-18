@@ -90,7 +90,7 @@ Handoff-metrieken voor [`07-validatie-voor-na.md`](07-validatie-voor-na.md) (Tea
 
 Gevolg van Move Method + Extract Method; geen gedragsregressie (58 regressie-subset-tests + 8 timestamp-tests groen). Zie [`06-verantwoording-tooling.md`](onderhoudbaarheid/06-verantwoording-tooling.md).
 
-> **Let op:** de SonarCloud-job importeert in CI nog geen JaCoCo-XML (`jacoco.xml` ontbreekt op het geconfigureerde pad vóór `sonar:sonar`). Coverage in SonarCloud-dashboard kan daardoor afwijken; JaCoCo lokaal/artifact is leidend voor NFR-M4-bewijs.
+> **JaCoCo in Sonar:** fix toegepast (verwijderd `sonar.coverage.jacoco.xmlReportPaths` met repo-root-paden; Sonar leest nu `target/site/jacoco/jacoco.xml` per module). CI-verificatie na PR-merge volgt in § CI-bewijs.
 
 ---
 
