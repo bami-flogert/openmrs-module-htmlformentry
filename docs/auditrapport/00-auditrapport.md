@@ -225,7 +225,7 @@ De volledige verbeteraanpak met prioritering staat in de
 | I | Security backlog / verbeteraanpak | [`06-security-backlog.md`](06-security-backlog.md) | Aanwezig (2026-06-11) |
 | J | Patchadvies (SBOM/CVE) | [`07-patchadvies.md`](07-patchadvies.md) | Aanwezig — gegenereerd via Snyk + [`generate-patch-advice.py`](../../.github/scripts/generate-patch-advice.py) |
 | K | DPIA-check (AVG art. 9/35) | [`08-dpia-check.md`](08-dpia-check.md) | Aanwezig (2026-06-15) |
-| L | Verantwoording (AI-)tooling | [`09-verantwoording-tooling.md`](09-verantwoording-tooling.md) | Aanwezig (2026-06-17) — *Waarvoor/reflectie in te vullen* |
+| L | Verantwoording (AI-)tooling | [`09-verantwoording-tooling.md`](09-verantwoording-tooling.md) | Aanwezig (2026-06-18) — afgerond |
 
 ---
 
