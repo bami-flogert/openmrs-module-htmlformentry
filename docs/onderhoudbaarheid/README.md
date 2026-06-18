@@ -15,4 +15,3 @@ Overzicht van deliverables LU2 onderhoudbaarheid op branch `acceptatie`.
 | [`../07-validatie-voor-na.md`](../07-validatie-voor-na.md) | Validatie voor/na, NFR-beoordeling |
 | [`../08-presentatie-outline.md`](../08-presentatie-outline.md) | Presentatie 30 min + CGI |
 | [`../sonarcloud-setup.md`](../sonarcloud-setup.md) | SonarCloud inrichting & troubleshooting |
-| [`../acceptatie-main-gate.md`](../acceptatie-main-gate.md) | Checklist merge acceptatie → main |
