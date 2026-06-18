@@ -26,7 +26,7 @@ Build en tests draaien op **JDK 8**; de Sonar-scanner op **JDK 17** (scanner-ver
 - [x] GitHub-integratie + PR decoration actief in SonarCloud
 - [x] **Automatic Analysis uit**, **CI-based Analysis aan** (anders: *"CI analysis while Automatic Analysis is enabled"*)
 - [x] Eerste PR-run groen (Quality Gate Passed)
-- [x] Branch protection: required check **SonarCloud Analysis** — zie `[otap.md` § Branch protection](otap.md#checklist-branch-protection)
+- [x] Branch protection: required check **SonarCloud Analysis** op `acceptatie` en `main` — zie [`otap.md` § Branch protection](otap.md#checklist-branch-protection)
 
 **Let op:** de GitHub App-check *"SonarCloud Code Analysis"* is niet hetzelfde als de workflow-job **SonarCloud Analysis** in `ci.yml`.
 
