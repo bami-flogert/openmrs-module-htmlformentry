@@ -12,13 +12,6 @@
 
 <br>
 
-**Auteur / auditor:** frogissober
-**Datum:** 2026-06-03 (geactualiseerd 2026-06-17)
-**Versie:** 1.0 — Definitief
-**Status:** Vastgesteld
-
-</div>
-
 ---
 
 ## Inhoudsopgave
@@ -42,7 +35,7 @@ combineert handmatige code-review, statische analyse (Snyk SAST/SCA, zizmor),
 SBOM-generatie en een penetratietest met live exploitatie in een Docker-lab.
 
 **Eindoordeel:** de module is **functioneel toegangsbeveiligd via de OpenMRS-kern**,
-maar kent op modulecode-niveau hiaten die in deze audit zijn aangetoond én
+maar kent op modulecode-niveau bevindingen die in deze audit zijn aangetoond én
 gemitigeerd. Alle drie de NEN-controls scoren **⚠️ Gedeeltelijk** in de
 [gap-analyse](01-gap-analyse.md); de drie meest kritische, zelf-exploiteerbare
 kwetsbaarheden zijn met een pentest aangetoond en daarna in de modulecode hersteld
@@ -73,22 +66,21 @@ in een patchplan met een verwachte risicoreductie van 100% bij volledige uitvoer
 verwerken. De keuze voor deze module en de motivatie staan in
 [`module-keuze.md`](../module-keuze.md).
 
-**Waarom relevant (AVG).** De module verwerkt bijzondere persoonsgegevens (medische
-observaties, patiëntidentiteit, medicatieorders) en valt daarmee onder AVG art. 9 en
+**Waarom relevant.** De module verwerkt bijzondere persoonsgegevens en valt daarmee onder AVG art. 9 en
 de zorgspecifieke beveiligingsnorm NEN-7510. De gegevensbeschermingscontext is apart
 uitgewerkt in de [DPIA-check](08-dpia-check.md). De kroonjuwelen en hun
 BIV-classificatie staan in [`03-assets.md`](03-assets.md).
 
 **Normkader.**
 
-- **NEN-7510:2024-2** — primair getoetst op de controls **A.8.3** (toegangsbeveiliging),
-  **A.8.5** (veilige authenticatie) en **A.8.15** (logging); zie [gap-analyse](01-gap-analyse.md).
+- **NEN-7510:2024-2** — primair getoetst op de controls **A.8.3**,
+  **A.8.5** en **A.8.15**; zie [gap-analyse](01-gap-analyse.md).
 - **AVG** — bijzondere persoonsgegevens; zie [DPIA-check](08-dpia-check.md).
-- **EU Cyber Resilience Act (CRA)** — supply-chain/SBOM-context; zie [§5](#5-sbom--supply-chain-security).
+- **EU Cyber Resilience Act (CRA)** — supply-chain/SBOM-context en essentiële eisen; zie [§5](#5-sbom--supply-chain-security) en de [CRA-mapping](11-cra-mapping.md) (bijlage H).
 
 **Scope-grens.**
 
-- **In scope:** de modulecode (controllers, services, gebundelde front-end-libraries),
+- **In scope:** de modulecode,
   de afhankelijkheden van de module en de CI/CD-pipeline
   ([pipeline-compliance](02-pipeline-compliance.md), [`otap.md`](../otap.md)).
 - **Buiten scope:** OpenMRS Core/platform zelf. Platform-afhankelijkheden (`org.openmrs.api:*`,
@@ -109,7 +101,7 @@ De audit is opgebouwd uit vijf elkaar aanvullende sporen:
 | 4 | **SBOM & patchadvies** | SPDX (`deploy.yml`) + CycloneDX (`snyk sbom`); geprioriteerd patchplan via [`generate-patch-advice.py`](../../.github/scripts/generate-patch-advice.py) | [`07-patchadvies.md`](07-patchadvies.md) |
 | 5 | **Penetratietest** | Reproduceerbare exploitatie in een Docker-lab met een gepatchte module-build (`Dockerfile.pentest`); vóór- en ná-bevindingen met bewijs | [`../pentest/`](../pentest/) |
 
-De **contextuele score** (stap 3) corrigeert de algemene CVSS-score voor de
+De **contextuele score** corrigeert de algemene CVSS-score voor de
 daadwerkelijke bereikbaarheid van het aanvalspad in déze module en het geraakte
 kroonjuweel uit [`03-assets.md`](03-assets.md). Een critical CVE in ongebruikte code
 weegt zo lichter, een medium CVE in het formulier-invoerpad juist zwaarder. De
@@ -128,16 +120,15 @@ Samenvatting van de [gap-analyse](01-gap-analyse.md) (bijlage A):
 |---------|---------|-----------------|
 | **A.8.3** Toegangsbeveiliging | ⚠️ Gedeeltelijk | Ontbrekende `@Authorized` op de service-laag; geen gedocumenteerde privilege-matrix |
 | **A.8.5** Veilige authenticatie | ⚠️ Gedeeltelijk | Geen CSRF-bescherming; sessiebeheer niet modulespecifiek geconfigureerd |
-| **A.8.15** Logging | ⚠️ Gedeeltelijk | PII (naam/geboortedatum) in plaintext in logs; geen retentie-/rotatiebeleid; geen log-integriteit |
+| **A.8.15** Logging | ⚠️ Gedeeltelijk | PII-logging gemitigeerd (HFE-04 — alleen `patientId`/`userId`/IDs); resterend: geen retentie-/rotatiebeleid; geen log-integriteit |
 
 ### 4.2 Risicobeeld
 
 De [risicomatrix](04-risicomatrix.md) (bijlage F) identificeert twee rode risico's —
 **D2 datalek via phishing/credential-diefstal (score 20)** en **D1 ransomware
-(score 15)** — uitgewerkt als bow-tie-threatmodellen in [`05-bowtie.md`](05-bowtie.md)
-(bijlage G).
+(score 15)** — uitgewerkt als bow-tie-threatmodellen in [`05-bowtie.md`](05-bowtie.md).
 
-### 4.3 Aangetoonde kwetsbaarheden (penetratietest)
+### 4.3 Aangetoonde kwetsbaarheden
 
 Drie zelf-exploiteerbare kwetsbaarheden zijn in het lab aangetoond én daarna in de
 modulecode gemitigeerd en hertest. Per bevinding is er een vóór- en een ná-document
@@ -154,6 +145,11 @@ Het bewijsmateriaal (HTTP-responses, JSON, screenshots) staat in
 een voor/ná-tabel die aantoont dat het aanvalspad gesloten is terwijl de legitieme
 functionaliteit blijft werken.
 
+Naast deze drie is een vierde, privacy-gerelateerde bevinding vastgelegd en hertest:
+**HFE-04** — PII (naam/geboortedatum) in applicatielogs (A.8.15, AVG art. 9). Deze is
+gemitigeerd door alleen numerieke `patientId`/`userId`/IDs te loggen en is met een
+hertest bevestigd ([voor](../pentest/bevinding-hfe-04-voor.md) · [na ✅](../pentest/bevinding-hfe-04-na.md)).
+
 ### 4.4 Kwetsbare afhankelijkheden
 
 De [security backlog](06-security-backlog.md) (bijlage I) registreert de
@@ -169,9 +165,9 @@ RCE via deserialisatie), **HFE-003** (gebundelde jQuery, DOM-XSS) en **HFE-004**
 
 ## 5. SBOM & supply chain-beveiliging
 
-Overzicht van afhankelijkheden, verouderde/kwetsbare componenten (o.a. MySQL 5.6, JDK 8) en maatregelen ter bescherming van de keten. Detail per component: [`07-patchadvies.md`](07-patchadvies.md); vollediger register: [`06-security-backlog.md`](06-security-backlog.md).
+Overzicht van afhankelijkheden, verouderde/kwetsbare componenten en maatregelen ter bescherming van de keten. Detail per component: [`07-patchadvies.md`](07-patchadvies.md); vollediger register: [`06-security-backlog.md`](06-security-backlog.md).
 
-**Huidige pipeline-maatregelen (bewijs):**
+**Huidige pipeline-maatregelen:**
 
 - SPDX SBOM via [`deploy.yml`](../../.github/workflows/deploy.yml) job `sbom` (GitHub dependency graph, gebundeld in `otap-build-bundle`)
 - CycloneDX SBOM via [`snyk.yml`](../../.github/workflows/snyk.yml) (`snyk sbom`)
@@ -179,6 +175,8 @@ Overzicht van afhankelijkheden, verouderde/kwetsbare componenten (o.a. MySQL 5.6
 - Dependency review op pull requests ([`ci.yml`](../../.github/workflows/ci.yml))
 - GitHub Actions workflow-SAST via [zizmor](https://zizmor.sh/) — lokaal `zizmor .` ([`zizmor.md`](../zizmor.md))
 - Geprioriteerd patchadvies op basis van SBOM + CVE/CVSS ([`07-patchadvies.md`](07-patchadvies.md), gegenereerd via [`generate-patch-advice.py`](../../.github/scripts/generate-patch-advice.py))
+
+De toetsing van deze pipeline-/supply-chainmaatregelen aan de essentiële CRA-eisen (Annex I, Deel I en II) staat in de [CRA-mapping](11-cra-mapping.md) (bijlage H).
 
 Zie ook bijlage B ([`02-pipeline-compliance.md`](02-pipeline-compliance.md)) en het OTAP-overzicht ([`../otap.md`](../otap.md)).
 
@@ -188,7 +186,7 @@ Zie ook bijlage B ([`02-pipeline-compliance.md`](02-pipeline-compliance.md)) en 
 
 **Eindoordeel.** De module steunt voor toegangsbeveiliging sterk op de OpenMRS-kern
 en scoort daardoor op de hoofdfunctionaliteit redelijk, maar op modulecode-niveau
-zijn reële hiaten aangetoond. De drie controls A.8.3, A.8.5 en A.8.15 zijn
+zijn reële bevindingen aangetoond. De drie controls A.8.3, A.8.5 en A.8.15 zijn
 **gedeeltelijk** compliant (zie [gap-analyse](01-gap-analyse.md)). De drie meest
 kritische, zelf-exploiteerbare kwetsbaarheden (HFE-01/02/03) zijn met een pentest
 aangetoond en vervolgens **opgelost en hertest** ([§4.3](#43-aangetoonde-kwetsbaarheden-penetratietest)).
@@ -224,25 +222,10 @@ De volledige verbeteraanpak met prioritering staat in de
 | E | Traceability matrix | [`10-traceability-matrix.md`](10-traceability-matrix.md) | Aanwezig (2026-06-17) |
 | F | Risicomatrix | [`04-risicomatrix.md`](04-risicomatrix.md) (`risicomatrix.png`) | Aanwezig |
 | G | Bow-tie / threat model | [`05-bowtie.md`](05-bowtie.md) (`bowtie-*.png`) | Aanwezig |
-| H | CRA-mapping | _nog te maken_ | Te doen |
+| H | CRA-mapping | [`11-cra-mapping.md`](11-cra-mapping.md) | Aanwezig (2026-06-18) |
 | I | Security backlog / verbeteraanpak | [`06-security-backlog.md`](06-security-backlog.md) | Aanwezig (2026-06-11) — register vastgesteld; H-prioriteiten deels open |
 | J | Patchadvies (SBOM/CVE) | [`07-patchadvies.md`](07-patchadvies.md) | Aanwezig — gegenereerd via Snyk + [`generate-patch-advice.py`](../../.github/scripts/generate-patch-advice.py) |
 | K | DPIA-check (AVG art. 9/35) | [`08-dpia-check.md`](08-dpia-check.md) | Aanwezig (2026-06-15) |
 | L | Verantwoording (AI-)tooling | [`09-verantwoording-tooling.md`](09-verantwoording-tooling.md) | Aanwezig (2026-06-18) — afgerond |
 
----
 
-<div align="center">
-
-### Ondertekening
-
-_Wordt bij finalisatie als digitale handtekening op de PDF gezet._
-
-| | |
-|---|---|
-| **Naam** | John Doe |
-| **Rol** | Auditor |
-| **Datum** | _________________ |
-| **Handtekening** | _________________ |
-
-</div>

@@ -22,7 +22,7 @@ De SCA-scan uit de CI-pipeline vond over alle Maven-submodules samen **223 uniek
 
 | Veld | Betekenis |
 |------|-----------|
-| Prioriteit | H = direct oppakken (Sprint 3-kandidaat) · M = inplannen · L = accepteren of monitoren |
+| Prioriteit | H = direct oppakken · M = inplannen · L = accepteren of monitoren |
 | Status | Open · In behandeling · False positive |
 | Contextuele score | CVSS bijgesteld op bereikbaarheid van het aanvalspad + geraakt kroonjuweel (h3) |
 

@@ -15,7 +15,7 @@
 
 ### 1.1 Governance AI-gebruik (teamafspraak)
 
-- AI-tools ondersteunden development, documentatie en reviews; zij namen **geen besluiten** en mergeerden niet autonoom.
+- AI-tools ondersteunden development, documentatie en reviews; zij namen **geen besluiten** en mergeerden niet zelf.
 - Elke PR met AI-bijdrage (code of Copilot-review) werd door **minimaal één groepslid** gecontroleerd vóór merge.
 - Copilot-review-suggesties werden geaccepteerd, aangepast of gemotiveerd genegeerd.
 - Strategische keuzes (scope, prioritering, security-score) werden in **teamoverleg** genomen; AI diende als sparring, niet als autoriteit.
