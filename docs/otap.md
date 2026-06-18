@@ -16,7 +16,7 @@
 | [`auditrapport/01-gap-analyse.md`](auditrapport/01-gap-analyse.md) | **Bijlage A** — gap-analyse module-code (A.8.3 / A.8.5 / A.8.15) |
 | [`module-keuze.md`](module-keuze.md) | Motivatie modulekeuze en NEN-7510-relevantie |
 | [`onderhoudbaarheid/01-nfr-onderhoudbaarheid.md`](onderhoudbaarheid/01-nfr-onderhoudbaarheid.md) | JaCoCo-coverage en quality gates (NFR-M5 / NFR-T1) |
-| [`security.md`](security.md) | Vulnerability disclosure policy |
+| [`security.md`](security.md) | Beveiligingsbeleid en kwetsbaarheidsmelding |
 | [`zizmor.md`](zizmor.md) | Lokale SAST-scan van GitHub Actions-workflows |
 
 Dit document beschrijft de **operationele OTAP-keten**: welke branches naar welke omgeving deployen, welke quality gates gelden en welke workflows betrokken zijn. Voor de compliance-mapping per NEN-control zie bijlage B.
@@ -95,10 +95,10 @@ Trigger: `pull_request` naar `development`, `pre-release`, `acceptatie` of `main
 | Job | Doel |
 |-----|------|
 | `build` | Compileert en bouwt OMOD |
-| `unit-test` | PoC-scope tests + JaCoCo (`mvn -pl omod test verify`) |
+| `unit-test` | PoC-scope OMOD tests + JaCoCo (`mvn -pl omod test verify`) |
 | `dependency-review` | Controle op kwetsbare nieuwe dependencies |
 | `zizmor` | GitHub Actions workflow-security (SAST); `continue-on-error` tot baseline is opgelost |
-| `sonarcloud` | SonarCloud-analyse + quality gate (`sonar:sonar`, `sonar.qualitygate.wait=true`) |
+| `sonarcloud` | Uitgebreide tests incl. logging audit (`api`, `api-tests`, `omod`) + SonarCloud quality gate |
 
 Setup en secrets: [`sonarcloud-setup.md`](sonarcloud-setup.md).
 
@@ -225,4 +225,4 @@ if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.re
 
 **Follow-up:** bij externe contributors de `if`-guard toevoegen aan `.github/workflows/ci.yml` (job `sonarcloud`).
 
-Module-specifieke security-hiaten staan in [`auditrapport/01-gap-analyse.md`](auditrapport/01-gap-analyse.md). De security backlog (bijlage I) in [`auditrapport/00-auditrapport.md`](auditrapport/00-auditrapport.md) is nog te finaliseren.
+Module-specifieke security-hiaten staan in [`auditrapport/01-gap-analyse.md`](auditrapport/01-gap-analyse.md). Het CVE/dependency-register staat in [`auditrapport/06-security-backlog.md`](auditrapport/06-security-backlog.md) (auditrapport bijlage I); pentest-bevindingen HFE-01 t/m HFE-04 zijn gemitigeerd, H-prioriteiten in de backlog (o.a. log4j, jQuery) staan nog open. Zie ook [`pentest/README.md`](pentest/README.md).

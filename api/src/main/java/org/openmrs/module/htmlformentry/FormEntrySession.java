@@ -141,11 +141,7 @@ public class FormEntrySession {
         context.setHttpSession(httpSession);
         this.httpSession = httpSession;
         this.patient = patient;
-        // Audit logging for HIPAA compliance — records patient access with identifying information
-        log.info("FormEntrySession created: patient=" + patient.getPatientIdentifier()
-                + " dob=" + patient.getBirthdate()
-                + " gender=" + patient.getGender()
-                + " names=" + patient.getPersonName());  // PII logged to application log
+        logSessionCreated();
 
         context.setupExistingData(patient);
         velocityEngine = new VelocityEngine();
@@ -507,9 +503,9 @@ public class FormEntrySession {
                 Obs o = toCheck.remove(toCheck.size() - 1);
                 if (o.getObsDatetime() == null && o.getEncounter() != null) {
                     o.setObsDatetime(o.getEncounter().getEncounterDatetime());
-                    if (log.isDebugEnabled())
-                        log.debug("Set obsDatetime to " + o.getObsDatetime() + " for "
-                                + o.getConcept().getName(Context.getLocale()));
+                    if (log.isDebugEnabled()) {
+                        log.debug(FormEntryAuditLogFormatter.formatObsDatetimeDebugMessage(o));
+                    }
                 }
                 if (o.getLocation() == null && o.getEncounter() != null) {
                     o.setLocation(o.getEncounter().getLocation());
@@ -578,7 +574,7 @@ public class FormEntrySession {
         if (submissionActions.getRelationshipsToCreate() != null) {
             for (Relationship r : submissionActions.getRelationshipsToCreate()) {
                 if (log.isDebugEnabled()) {
-                    log.debug("creating relationships" + r.getRelationshipType().getDescription());
+                    log.debug(FormEntryAuditLogFormatter.formatRelationshipDebugMessage("creating", r.getRelationshipType().getId(), r.getId()));
                 }
                 Context.getPersonService().saveRelationship(r);
             }
@@ -587,7 +583,7 @@ public class FormEntrySession {
         if (submissionActions.getRelationshipsToVoid() != null) {
             for (Relationship r : submissionActions.getRelationshipsToVoid()) {
                 if (log.isDebugEnabled()) {
-                    log.debug("voiding relationships" + r.getId());
+                    log.debug(FormEntryAuditLogFormatter.formatRelationshipDebugMessage("voiding", null, r.getId()));
                 }
                 Context.getPersonService().voidRelationship(r, "htmlformentry");
             }
@@ -596,7 +592,7 @@ public class FormEntrySession {
         if (submissionActions.getRelationshipsToEdit() != null) {
             for (Relationship r : submissionActions.getRelationshipsToCreate()) {
                 if (log.isDebugEnabled()) {
-                    log.debug("editing relationships" + r.getId());
+                    log.debug(FormEntryAuditLogFormatter.formatRelationshipDebugMessage("editing", null, r.getId()));
                 }
                 Context.getPersonService().saveRelationship(r);
             }
@@ -656,8 +652,9 @@ public class FormEntrySession {
         
         if (submissionActions.getObsToVoid() != null) {
             for (Obs o : submissionActions.getObsToVoid()) {
-                if (log.isDebugEnabled())
-                    log.debug("voiding obs: " + o.getObsId());
+                if (log.isDebugEnabled()) {
+                    log.debug(FormEntryAuditLogFormatter.formatVoidObsDebugMessage(o.getObsId()));
+                }
                 obsService.voidObs(o, "htmlformentry");
                 // if o was in a group and that group has no obs left, void the group
 				voidObsGroupIfAllChildObsVoided(o.getObsGroup());
@@ -732,6 +729,8 @@ public class FormEntrySession {
                 customFormSubmissionAction.applyAction(this);
             }
         }
+
+        logSubmitSuccess();
 
     }
 
@@ -1029,6 +1028,40 @@ public class FormEntrySession {
     }
 
     /**
+     * Optimistic-concurrency check: verifies that the underlying {@link HtmlForm} (and, if this
+     * session is based on an existing {@link Encounter}, that encounter) have not been modified
+     * since the timestamps the client obtained when it loaded the form-entry page.
+     * <p/>
+     * Moved here from
+     * {@code HtmlFormEntryController#getFormEntrySession} as part of the maintainability PoC
+     * (Move Method / SRP): this is domain-level validation about the session's own state, not
+     * controller/web concern.
+     *
+     * @param formModifiedTimestamp the form-modified timestamp the client is submitting back, or
+     *            {@code null} if the check should be skipped
+     * @param encounterModifiedTimestamp the encounter-modified timestamp the client is submitting
+     *            back, or {@code null} if the check should be skipped
+     * @throws RuntimeException if the form or encounter was modified after the given timestamps
+     *             were taken
+     */
+    public void validateNotModifiedSinceTimestamps(Long formModifiedTimestamp, Long encounterModifiedTimestamp) {
+        if (formModifiedTimestamp != null) {
+            if (!OpenmrsUtil.nullSafeEquals(formModifiedTimestamp, getFormModifiedTimestamp())) {
+                throw new RuntimeException(Context.getMessageSourceService().getMessage(
+                        "htmlformentry.error.formModifiedBeforeSubmission"));
+            }
+        }
+
+        if (encounter != null) {
+            if (encounterModifiedTimestamp != null
+                    && !OpenmrsUtil.nullSafeEquals(encounterModifiedTimestamp, getEncounterModifiedTimestamp())) {
+                throw new RuntimeException(Context.getMessageSourceService().getMessage(
+                        "htmlformentry.error.encounterModifiedBeforeSubmission"));
+            }
+        }
+    }
+
+    /**
      * Calculates the date an encounter was last modified by checking the creation and voided times
      * of all Obs and Orders associated with the Encounter
      *
@@ -1166,5 +1199,30 @@ public class FormEntrySession {
     
     public String getEncounterLocationName() {
     	return StringEscapeUtils.escapeHtml(encounter.getLocation() == null ? "" : encounter.getLocation().getName());
+    }
+
+    private void logSessionCreated() {
+        if (log.isInfoEnabled()) {
+            log.info(FormEntryAuditLogFormatter.formatSessionCreated(resolvePatientId(), resolveUserId()));
+        }
+    }
+
+    private void logSubmitSuccess() {
+        if (log.isInfoEnabled()) {
+            log.info(FormEntryAuditLogFormatter.formatSubmitSuccess(
+                    resolvePatientId(), resolveUserId(), getHtmlFormId(), resolveEncounterId(), context.getMode()));
+        }
+    }
+
+    private Integer resolvePatientId() {
+        return patient != null ? patient.getPatientId() : null;
+    }
+
+    private Integer resolveUserId() {
+        return Context.getAuthenticatedUser() != null ? Context.getAuthenticatedUser().getUserId() : null;
+    }
+
+    private Integer resolveEncounterId() {
+        return encounter != null ? encounter.getEncounterId() : null;
     }
 }

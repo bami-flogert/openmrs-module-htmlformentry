@@ -1,6 +1,6 @@
 # Testresultaten baseline — OpenMRS HTML Form Entry
 
-**Datum:** 15 juni 2026 · **Branch:** `implem-tests`  
+**Datum:** 17 juni 2026 · **Branch:** `merge/refactor-controller-into-acceptatie`  
 **Scope:** A = PoC (`omod`), B = module-baseline — zie [`03-teststrategie.md`](03-teststrategie.md)
 
 ---
@@ -9,9 +9,9 @@
 
 | | |
 |---|---|
-| Omgeving | Windows 10, Temurin JDK 8.0_482, Maven 3.9.12 |
-| Scope A | `mvn -pl omod test verify` → **BUILD SUCCESS** (~15 s, **19 tests**) |
-| Scope B | `mvn -pl api-tests test` → 529 tests, 71 rood (gedocumenteerd, niet gefixt) |
+| Omgeving | Windows 10, Temurin JDK 8, Maven 3.9.x |
+| Scope A | `mvn -pl omod test verify` → **BUILD SUCCESS** (34 tests) |
+| Scope B | `mvn -pl api-tests test` → 529 tests, ~70 rood (gedocumenteerd, niet gefixt) |
 
 ---
 
@@ -21,10 +21,19 @@
 |--------|-------|--------|
 | `HtmlFormEncounterControllerTest` | 7 | ✅ |
 | `HtmlFormAjaxValidationControllerTest` | 2 | ✅ |
-| `HtmlFormEntryControllerTest` | 10 | ✅ (T1–T9, characterization) |
-| **Totaal** | **19** | **✅** |
+| `HtmlFormEntryControllerTest` | 10 | ✅ (T1–T9, characterization, ongewijzigd) |
+| `HtmlFormEntryControllerExtractedMethodsTest` | 15 | ✅ (extract unit tests; resolveFormEntryContext via characterization) |
+| **Totaal omod** | **34** | **✅** |
 
-Traceability: [`03-teststrategie.md`](03-teststrategie.md) §7.4 · AI-verantwoording: [`05-verantwoording-ai-tests.md`](05-verantwoording-ai-tests.md)
+Traceability: [`03-teststrategie.md`](03-teststrategie.md) §7.4 · §7.2b · AI-verantwoording: [`05-verantwoording-ai-tests.md`](05-verantwoording-ai-tests.md)
+
+---
+
+## Resultaten na refactor-merge (api-tests)
+
+| Klasse | Tests | Status |
+|--------|-------|--------|
+| `FormEntrySessionValidateNotModifiedSinceTimestampsTest` | 8 | ✅ |
 
 ---
 
@@ -39,4 +48,4 @@ Traceability: [`03-teststrategie.md`](03-teststrategie.md) §7.4 · AI-verantwoo
 
 ## Conclusie
 
-Scope A is **groen en refactor-ready**. Scope B blijft rood; dat is bewust buiten scope. **Volgende stap:** PoC Extract Class op `getFormEntrySession` met dezelfde tests als vangnet.
+Scope A: characterization tests (T1–T9) blijven het regressievangnet; extract unit tests vullen de refactor-laag aan. Scope B blijft rood; dat is bewust buiten scope.

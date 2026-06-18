@@ -44,5 +44,5 @@ De module telt meerdere tientallen Java-klassen, een eigen tag-library, een Velo
 | [`auditrapport/02-pipeline-compliance.md`](auditrapport/02-pipeline-compliance.md) | Pipeline-compliance (bijlage B) |
 | [`otap.md`](otap.md) | OTAP-pipeline: branches, omgevingen, workflows |
 | [`onderhoudbaarheid/01-nfr-onderhoudbaarheid.md`](onderhoudbaarheid/01-nfr-onderhoudbaarheid.md) | NFR onderhoudbaarheid (JaCoCo, SonarCloud) |
-| [`security.md`](security.md) | Vulnerability disclosure policy |
+| [`security.md`](security.md) | Beveiligingsbeleid en kwetsbaarheidsmelding |
 

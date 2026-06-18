@@ -133,15 +133,19 @@ Dekking wordt bepaald op basis van **geprioriteerde hotspots**, niet op een blan
 ### Reproduceerbare commando's
 
 ```bash
-# PoC-testscope: tests + JaCoCo
-mvn -pl omod test verify
+# PoC-testscope + logging audit tests + JaCoCo (zoals CI)
+mvn -B -pl api,api-tests,omod -am test verify
+
+# Alleen formatter unit tests
+mvn -pl api -Dtest=FormEntryAuditLogFormatterTest test
 
 # Module-baseline (verwacht deels rood)
 mvn -pl api,api-tests test
 
-# Coverage controller-pakket bekijken
-# Rapport: omod/target/site/jacoco/index.html
-# CSV:     omod/target/site/jacoco/jacoco.csv
+# Coverage rapporten
+# api/target/site/jacoco/index.html
+# api-tests/target/site/jacoco/index.html
+# omod/target/site/jacoco/index.html
 ```
 
 ---
@@ -183,17 +187,19 @@ Module-brede failures worden **eerlijk gerapporteerd** in [`04-testresultaten-ba
 | `api-tests` (volledig)                 | api-tests | 529   | ~70 errors | Module-baseline                                          |
 | `DrugOrderTag1_10Test`                 | api-1.10  | 3     | NPE        | Module-baseline                                          |
 
-### 7.2 Nieuwe tests — `HtmlFormEntryControllerTest`
+### 7.2 Nieuwe tests — characterization + extract unit tests
 
-**Patroon:** volg [`HtmlFormAjaxValidationControllerTest`](../omod/src/test/java/org/openmrs/htmlformentry/web/controller/HtmlFormAjaxValidationControllerTest.java) — `BaseModuleContextSensitiveTest` + `MockHttpServletRequest`; roep `getFormEntrySession` direct aan.
+**Patroon characterization:** volg [`HtmlFormAjaxValidationControllerTest`](../omod/src/test/java/org/openmrs/htmlformentry/web/controller/HtmlFormAjaxValidationControllerTest.java) — `BaseModuleContextSensitiveTest` + `MockHttpServletRequest`; roep `getFormEntrySession` direct aan.
 
-**Volgorde:** characterization tests schrijven **vóór** Extract Class-refactor. Tests blijven bij refactor **ongewijzigd**.
+**Volgorde:** characterization tests schrijven **vóór** Extract Method-refactor. Characterization tests blijven bij refactor **ongewijzigd** en zijn leidend voor regressie.
 
 | Testklasse                       | Fase                  | Te testen gedrag                       | Aantal | Type      |
 | -------------------------------- | --------------------- | -------------------------------------- | ------ | --------- |
 | `HtmlFormEntryControllerTest`  | Nu                    | Request-parameters → sessie/exception | 6–8   | Component |
 | `FormEntryRequestResolverTest` | Na PoC*(optioneel)* | Logica in geëxtraheerde klasse        | 4–6   | Unit      |
 | `FormEntrySessionFactoryTest`  | Na PoC*(optioneel)* | Factory-keuze constructor              | 2–3   | Unit      |
+
+**§7.2b — Extract unit tests (na merge refactor-branch):** `HtmlFormEntryControllerExtractedMethodsTest` en `FormEntrySessionValidateNotModifiedSinceTimestampsTest` vullen de characterization-laag aan; ze mogen het gedrag in §7.4 niet tegenspreken. `resolveFormEntryContext` wordt niet apart unit-getest (vereist `Context`/spy); die paden zitten in de characterization tests T1–T4 en T2.
 
 ### 7.3 Paden — `getFormEntrySession` (prio 1)
 
@@ -268,38 +274,33 @@ Selecteer **5 bestaande groene tests** uit `api-tests` die het domein "form entr
 
 **Actie:** draai `mvn -pl api-tests test`, exporteer groene klassen, kies de 5 meest relevante voor form-entry. Resultaat documenteren in [`04-testresultaten-baseline.md`](04-testresultaten-baseline.md).
 
+### 7.6 Logging audit tests (security PoC)
+
+Automated checks voor metadata-only audit logging (NFR-S1/S2). Traceability naar [`08-logging.md`](08-logging.md) §Validatie.
+
+| Test | Type | Bewijst | Commando |
+|------|------|---------|----------|
+| `FormEntryAuditLogFormatterTest` | Unit (`api`) | Logberichten bevatten alleen numerieke IDs; geen PII-patronen; null → `none` | `mvn -pl api -Dtest=FormEntryAuditLogFormatterTest test` |
+| `FormEntrySessionLoggingTest` | Integratie (`api`) | Null-patiënt sessie-pad zonder NPE (log niet geasserteerd) | `mvn -pl api -Dtest=FormEntrySessionLoggingTest test` |
+| `FormEntrySessionTest` | Integratie (`api-tests`) | Sessie-start smoke; console kan `session.created` tonen | `mvn -pl api-tests -Dtest=FormEntrySessionTest test` |
+| `PostSubmissionActionTagTest` | Integratie (`api-tests`) | Submit smoke; console kan `submit.success` tonen | `mvn -pl api-tests -Dtest=PostSubmissionActionTagTest test` |
+
+SonarCloud new-code coverage: formatter-unit tests + integratietests via **`sonarcloud`**-job in CI (`api`, `api-tests`, `omod` JaCoCo-reports). De aparte `unit-test`-job draait alleen `omod`.
+
 ---
 
 ## 8. CI en reproduceerbaarheid
 
-### 8.1 Quality-workflow
+### 8.1 CI (`.github/workflows/ci.yml`)
 
-Aparte CI-job voor PoC-testscope (voorstel: `.github/workflows/quality.yml`), los van `deploy.yml` dat met `-DskipTests` bouwt.
+Twee relevante jobs:
 
-```yaml
-on:
-  pull_request:
-  push:
-    branches: [development, pre-release]
+| Job | Maven-commando | Dekking |
+|-----|----------------|---------|
+| `unit-test` | `mvn -B -pl omod -am test verify` | OMOD PoC-scope (controllers); `-am` bouwt `api` eerst |
+| `sonarcloud` | `mvn -B -pl api,api-tests,omod -am test verify` | OMOD + **logging audit tests** (`FormEntryAuditLogFormatterTest`, `FormEntrySessionLoggingTest`, `FormEntrySessionTest`, `PostSubmissionActionTagTest`) + JaCoCo voor SonarCloud |
 
-jobs:
-  test-poc-scope:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          java-version: '8'
-          distribution: 'temurin'
-          cache: maven
-      - name: PoC-scope tests + JaCoCo
-        run: mvn -B -pl omod test verify
-      - name: Upload JaCoCo report
-        uses: actions/upload-artifact@v4
-        with:
-          name: jacoco-omod
-          path: omod/target/site/jacoco/
-```
+SonarCloud aggregeert JaCoCo uit `api`, `api-tests` en `omod` (`pom.xml` / `sonar-project.properties`).
 
 ### 8.2 Metadata per testrun
 
@@ -391,4 +392,4 @@ Controller-pakket (`org.openmrs.module.htmlformentry.web.controller`): **16,9%**
 
 De teststrategie richt zich op de **PoC-hotspot** in OMOD: `HtmlFormEntryController.getFormEntrySession`. Door characterization tests te schrijven vóór de geplande Extract Class-refactor leggen we gedrag vast, beperken we regressierisico en maken we de refactor valideerbaar.
 
-We combineren **meerdere testtypen** (unit, component, regressie-subset, coverage, SAST) binnen een **afgebakende, reproduceerbare scope** (`mvn -pl omod test verify` + dedicated CI). Module-brede instabiliteit documenteren we als baseline-context, zonder dat te verwarren met het primaire testdoel.
+We combineren **meerdere testtypen** (unit, component, regressie-subset, coverage, SAST) binnen een **afgebakende, reproduceerbare scope** (`unit-test` + `sonarcloud` in CI). Module-brede instabiliteit documenteren we als baseline-context, zonder dat te verwarren met het primaire testdoel.
