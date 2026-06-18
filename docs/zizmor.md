@@ -177,13 +177,27 @@ Gebruik ignores spaarzaam en noteer de reden (audittrail, control 8.8).
 | Stap | Status |
 |------|--------|
 | Baseline vastleggen (`zizmor .` lokaal) | ✅ Dit document |
-| CI-job in [`ci.yml`](../.github/workflows/ci.yml) (`zizmor`-job) | ✅ Aanwezig — `continue-on-error: true` tot `unpinned-uses` / `cache-poisoning` zijn opgelost |
+| CI-job in [`ci.yml`](../.github/workflows/ci.yml) (`zizmor`-job) | ✅ Aanwezig — `continue-on-error: true` zolang `unpinned-uses` / `cache-poisoning` bewust niet zijn gemitigeerd |
 | Eenvoudige remediatie (`template-injection`, `artipacked`, `dependabot-cooldown`) | ✅ Opgelost (2026-06-15) |
 | SHA-pinnen actions (`unpinned-uses`, 36×) | Open — aparte PR |
 | Cache-poisoning (Maven-cache op publish-workflows) | Open — beoordelen of accepteren |
 | Optioneel: SARIF upload (`advanced-security: true`) | Niet geïmplementeerd |
 
 Voor CI-integratie en drempels: zie [zizmor quickstart](https://docs.zizmor.sh/quickstart/) en [usage](https://docs.zizmor.sh/usage/).
+
+---
+
+## Besluit (audittrail)
+
+De twee open high-categorieën worden in deze PoC **gedocumenteerd geaccepteerd** en in een aparte wijziging opgepakt:
+
+- **`unpinned-uses`**: actions staan op tag (`@v4`) i.p.v. commit-SHA. Dit is een supply-chain hardening maatregel met een relatief grote diff (veel regels, regelmatig onderhoud). In deze repo mitigeert Dependabot het risico deels door tags actueel te houden, maar SHA-pinnen blijft de voorkeur.
+- **`cache-poisoning`**: zizmor rapporteert mogelijke poisoning van Maven caches op publish-workflows. Dit vereist structurele workflow-wijzigingen en moet per job/cache-key beoordeeld worden.
+
+**CI-gate:** de zizmor-job blijft `continue-on-error: true` tot één van deze twee keuzes is gemaakt:
+
+1. **Mitigeren**: SHA-pinnen + cache-structuur aanpassen, daarna `continue-on-error: false` (harde gate), of
+2. **Formeel accepteren**: een projectbrede zizmor-config (`.github/zizmor.yml`) met onderbouwing per suppressie + een vast reviewmoment (bijv. per release).
 
 ---
 

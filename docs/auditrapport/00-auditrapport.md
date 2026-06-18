@@ -157,16 +157,19 @@ functionaliteit blijft werken.
 ### 4.4 Kwetsbare afhankelijkheden
 
 De [security backlog](06-security-backlog.md) (bijlage I) registreert de
-SCA-bevindingen, contextueel gescoord en gemapt op NEN-controls. De
-H-prioriteiten — o.a. **HFE-001** (log4j 1.x, EOL), **HFE-002** (commons-fileupload,
+SCA-bevindingen, contextueel gescoord en gemapt op NEN-controls. Het register is
+vastgesteld (2026-06-11); open H-prioriteiten worden daar bijgehouden tot mitigatie
+of geaccepteerde uitzondering. Pentest-bevindingen (HFE-01 t/m HFE-04) staan
+apart in [`../pentest/`](../pentest/) — zie [ID-legenda](../pentest/README.md#twee-id-systemen--niet-door-elkaar-halen).
+De H-prioriteiten — o.a. **HFE-001** (log4j 1.x, EOL), **HFE-002** (commons-fileupload,
 RCE via deserialisatie), **HFE-003** (gebundelde jQuery, DOM-XSS) en **HFE-004**
 (Spring4Shell) — vormen de input voor het [patchadvies](07-patchadvies.md) (bijlage J).
 
 ---
 
-## 5. SBOM & Supply Chain Security
+## 5. SBOM & supply chain-beveiliging
 
-> _In te vullen bij finalisatie._ Overzicht van afhankelijkheden, verouderde/kwetsbare componenten (o.a. MySQL 5.6, JDK 8) en bescherming van de keten.
+Overzicht van afhankelijkheden, verouderde/kwetsbare componenten (o.a. MySQL 5.6, JDK 8) en maatregelen ter bescherming van de keten. Detail per component: [`07-patchadvies.md`](07-patchadvies.md); vollediger register: [`06-security-backlog.md`](06-security-backlog.md).
 
 **Huidige pipeline-maatregelen (bewijs):**
 
@@ -222,7 +225,7 @@ De volledige verbeteraanpak met prioritering staat in de
 | F | Risicomatrix | [`04-risicomatrix.md`](04-risicomatrix.md) (`risicomatrix.png`) | Aanwezig |
 | G | Bow-tie / threat model | [`05-bowtie.md`](05-bowtie.md) (`bowtie-*.png`) | Aanwezig |
 | H | CRA-mapping | _nog te maken_ | Te doen |
-| I | Security backlog / verbeteraanpak | [`06-security-backlog.md`](06-security-backlog.md) | Aanwezig (2026-06-11) |
+| I | Security backlog / verbeteraanpak | [`06-security-backlog.md`](06-security-backlog.md) | Aanwezig (2026-06-11) — register vastgesteld; H-prioriteiten deels open |
 | J | Patchadvies (SBOM/CVE) | [`07-patchadvies.md`](07-patchadvies.md) | Aanwezig — gegenereerd via Snyk + [`generate-patch-advice.py`](../../.github/scripts/generate-patch-advice.py) |
 | K | DPIA-check (AVG art. 9/35) | [`08-dpia-check.md`](08-dpia-check.md) | Aanwezig (2026-06-15) |
 | L | Verantwoording (AI-)tooling | [`09-verantwoording-tooling.md`](09-verantwoording-tooling.md) | Aanwezig (2026-06-17) — *Waarvoor/reflectie in te vullen* |
