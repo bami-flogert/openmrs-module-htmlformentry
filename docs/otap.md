@@ -15,7 +15,7 @@
 | [`auditrapport/02-pipeline-compliance.md`](auditrapport/02-pipeline-compliance.md) | **Bijlage B** — NEN-7510-mapping van pipeline-maatregelen op controls |
 | [`auditrapport/01-gap-analyse.md`](auditrapport/01-gap-analyse.md) | **Bijlage A** — gap-analyse module-code (A.8.3 / A.8.5 / A.8.15) |
 | [`module-keuze.md`](module-keuze.md) | Motivatie modulekeuze en NEN-7510-relevantie |
-| [`onderhoudbaarheid/01-nfr-onderhoudbaarheid.md`](onderhoudbaarheid/01-nfr-onderhoudbaarheid.md) | JaCoCo-coverage en quality gates (NFR-M5 / NFR-T1) |
+| [`01-nfr-onderhoudbaarheid.md`](01-nfr-onderhoudbaarheid.md) | NFR onderhoudbaarheid: complexiteit, smells, testbaarheid, quality gate (M1-M7) |
 | [`security.md`](security.md) | Beveiligingsbeleid en kwetsbaarheidsmelding |
 | [`zizmor.md`](zizmor.md) | Lokale SAST-scan van GitHub Actions-workflows |
 

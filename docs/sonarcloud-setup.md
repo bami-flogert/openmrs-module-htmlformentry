@@ -55,7 +55,7 @@ Als de scan wel draait maar Maven eindigt met *QUALITY GATE STATUS: FAILED*, wer
 
 Veelvoorkomende oorzaak op deze PR: gewijzigde `.github/workflows/ci.yml` wordt door Sonar als *new code* geanalyseerd. Daarom sluit `sonar.exclusions=.github/**` workflows uit van de Java-kwaliteitsgate.
 
-## A5. Quality Gate (NFR-M6)
+## A5. Quality Gate (NFR-M5)
 
 SonarCloud → **Quality Gates** → default **Sonar way** (free plan: geen custom gates).
 
