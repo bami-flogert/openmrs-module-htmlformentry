@@ -1,7 +1,7 @@
 # Ontwerp refactoring - HtmlFormEntryController
 
 **Taak:** LU2-38 - 4.8 Aangepast ontwerp  
-**Branch:** `refactor/htmlformentry-controller-poc`  
+**Branch:** `acceptatie` (PoC gemerged via PR #31)  
 **Datum:** 2026-06-18  
 **Auteur:** Floris Bogers  
 **Scope:** `HtmlFormEntryController.getFormEntrySession` (PoC-hotspot)
