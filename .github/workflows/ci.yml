@@ -114,6 +114,18 @@ jobs:
           mvn -B package --file pom.xml -DskipTests
           mvn -B -pl api,api-tests,omod -am test verify --file pom.xml
 
+      - name: Verify JaCoCo reports exist
+        run: |
+          for f in omod/target/site/jacoco/jacoco.xml \
+                   api/target/site/jacoco/jacoco.xml; do
+            if [ ! -f "$f" ]; then
+              echo "::error::Missing $f"
+              exit 1
+            fi
+            echo "OK: $f"
+          done
+          echo "Note: api-tests has no src/main; JaCoCo report is not generated there (tests cover api/omod code)."
+
       - name: Set up JDK 17 for SonarScanner
         uses: actions/setup-java@v4
         with:

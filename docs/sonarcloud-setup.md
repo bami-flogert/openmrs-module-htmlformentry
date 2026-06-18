@@ -1,98 +1,69 @@
-# SonarCloud — setup en secrets
+# SonarCloud — inrichting en onderhoud
 
-Handmatige stappen vóór de CI-workflow werkt. Uitvoeren door een teamlid met SonarCloud- en GitHub-adminrechten.
+Documentatie van de **eenmalige externe inrichting** (SonarCloud + GitHub Secrets) en **troubleshooting** wanneer CI faalt. De CI-config staat in de repo; drempels en NFR-koppeling staan in `[01-nfr-onderhoudbaarheid.md](01-nfr-onderhoudbaarheid.md)`; branch protection en OTAP-context in `[otap.md](otap.md)`.
 
-## A1. Organization en project key
+**Dashboard:** [sonarcloud.io/project/overview?id=bami-flogert_openmrs-module-htmlformentry](https://sonarcloud.io/project/overview?id=bami-flogert_openmrs-module-htmlformentry)
 
-1. Ga naar [sonarcloud.io](https://sonarcloud.io) en log in.
-2. Open het project `openmrs-module-htmlformentry`.
-3. **Project Settings** → **General Settings**.
-4. Noteer:
+---
 
-| Veld | Waarde in repo |
-|------|----------------|
-| Organization | `bami-flogert` (in [`sonar-project.properties`](../sonar-project.properties)) |
-| Project Key | `bami-flogert_openmrs-module-htmlformentry` |
+## Repo-bestanden
 
-Wijkt de project key in SonarCloud af? Pas `sonar-project.properties` aan vóór merge.
 
-## A2. SONAR_TOKEN aanmaken
+| Bestand                                                   | Rol                                                                       |
+| --------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `[sonar-project.properties](../sonar-project.properties)` | Org `bami-flogert`, project key, exclusions (`.github/**`); JaCoCo via standaardpad per module |
+| `[.github/workflows/ci.yml](../.github/workflows/ci.yml)` | Job `sonarcloud`: tests + `sonar:sonar` met `sonar.qualitygate.wait=true` |
 
-1. SonarCloud → profiel-avatar → **My Account** → **Security**.
-2. **Generate Tokens**:
-   - Name: `github-actions-htmlformentry`
-   - Type: Global Analysis Token of Project Analysis Token
-   - Expires: na einde LU2 (bijv. 3–6 maanden)
-3. Kopieer de token direct (eenmalig zichtbaar).
 
-## A3. GitHub Secret
+Build en tests draaien op **JDK 8**; de Sonar-scanner op **JDK 17** (scanner-vereiste).
 
-1. [Repository Settings → Secrets → Actions](https://github.com/bami-flogert/openmrs-module-htmlformentry/settings/secrets/actions)
-2. **New repository secret**
-3. Name: `SONAR_TOKEN` (exact)
-4. Value: token uit A2
+---
 
-## A4. GitHub-integratie en analyse-methode
+## Verificatie (setup afgerond)
 
-1. SonarCloud → Organization Settings → **GitHub**.
-2. Controleer dat `bami-flogert/openmrs-module-htmlformentry` gekoppeld is.
-3. Project Settings → **Pull Request Decoration** → GitHub ingeschakeld.
-4. Project Settings → **Analysis Method**:
-   - **Automatic Analysis** uitzetten (GitHub App)
-   - **CI-based Analysis** aanzetten (`ci.yml` Maven-job)
+- [x] Organization en project key komen overeen met `sonar-project.properties`
+- [x] `SONAR_TOKEN` in [GitHub Actions secrets](https://github.com/bami-flogert/openmrs-module-htmlformentry/settings/secrets/actions)
+- [x] GitHub-integratie + PR decoration actief in SonarCloud
+- [x] **Automatic Analysis uit**, **CI-based Analysis aan** (anders: *"CI analysis while Automatic Analysis is enabled"*)
+- [x] Eerste PR-run groen (Quality Gate Passed)
+- [x] Branch protection: required check **SonarCloud Analysis** op `acceptatie` en `main` — zie [`otap.md` § Branch protection](otap.md#checklist-branch-protection)
 
-Zonder stap 4 faalt CI met: *"You are running CI analysis while Automatic Analysis is enabled"*.
+**Let op:** de GitHub App-check *"SonarCloud Code Analysis"* is niet hetzelfde als de workflow-job **SonarCloud Analysis** in `ci.yml`.
 
-## A4b. Quality Gate FAILED in CI
+Quality Gate-drempels (Sonar way, free plan): zie NFR-M1 t/m M7 in `[01-nfr-onderhoudbaarheid.md](01-nfr-onderhoudbaarheid.md)`.
 
-Als de scan wel draait maar Maven eindigt met *QUALITY GATE STATUS: FAILED*, werkt `sonar.qualitygate.wait=true` zoals bedoeld (NFR-M5).
+---
 
-1. Open de link in de CI-log, bijvoorbeeld:  
-   `https://sonarcloud.io/dashboard?id=bami-flogert_openmrs-module-htmlformentry&pullRequest=19`
-2. Klik op **Quality Gate** → bekijk welke **conditie** rood is (vaak: *Coverage on New Code*, *New Issues*, of GitHub Actions-regels op gewijzigde workflow).
-3. Los de gemelde issues op in code, of markeer false positives als *Won't fix* in SonarCloud.
-4. Re-run de failed **SonarCloud Analysis** job op de PR.
+## Eenmalige setup (referentie)
 
-Veelvoorkomende oorzaak op deze PR: gewijzigde `.github/workflows/ci.yml` wordt door Sonar als *new code* geanalyseerd. Daarom sluit `sonar.exclusions=.github/**` workflows uit van de Java-kwaliteitsgate.
+Alleen nodig bij nieuw teamlid, verlopen token of nieuw SonarCloud-project:
 
-## A5. Quality Gate (NFR-M6)
+1. SonarCloud → **My Account → Security** → token `github-actions-htmlformentry`
+2. GitHub → **Secrets → Actions** → `SONAR_TOKEN` (exact)
+3. SonarCloud → **Analysis Method**: automatic uit, CI-based aan
 
-SonarCloud → **Quality Gates** → default **Sonar way** (free plan: geen custom gates).
+---
 
-New Code policy (minimum):
+## Troubleshooting: Quality Gate FAILED
 
-| Drempel | Instelling |
-|---------|------------|
-| New bugs | 0 blocker/critical |
-| New code smells | 0 critical |
-| S3776 | 0 new violations on new code |
-| Duplication | Geen verslechtering |
+Als de scan draait maar Maven eindigt met *QUALITY GATE STATUS: FAILED*, werkt `sonar.qualitygate.wait=true` zoals bedoeld (NFR-M5/M6).
 
-## A6. Branch protection (na eerste groene run)
+1. Open de Sonar-link uit de CI-log (bijv. `…&pullRequest=<nr>`)
+2. **Quality Gate** → welke conditie is rood? (vaak: *Coverage on New Code*, *New Issues*)
+3. Issues oplossen in code, of false positives als *Won't fix* markeren
+4. Re-run de **SonarCloud Analysis** job op de PR
 
-**Settings → Branches** → rule op `acceptatie` (en later `main`):
+**Veelvoorkomend:** gewijzigde `.github/workflows/ci.yml` telt als new code — daarom `sonar.exclusions=.github/**` in `sonar-project.properties`.
 
-- Required status check: **SonarCloud Analysis**
+### JaCoCo-import in Sonar-scan
 
-**Let op:** Zonder `SONAR_TOKEN` faalt de Maven-job met auth-fout. De aparte GitHub App-check "SonarCloud Code Analysis" is niet hetzelfde als deze workflow-job.
+Sonar leest per Maven-module standaard `target/site/jacoco/jacoco.xml` (gegenereerd door `jacoco:report` in de `verify`-fase). Geen custom `sonar.coverage.jacoco.xmlReportPaths` nodig.
 
-De Sonar-scan draait op **JDK 17** (scanner-vereiste); build en tests blijven op **JDK 8** (OpenMRS-module).
+De `sonarcloud`-job in `ci.yml` bevat een stap **Verify JaCoCo reports exist** die controleert op `api` en `omod` vóór `sonar:sonar`. (`api-tests` heeft geen `src/main` — daar wordt geen `jacoco.xml` gegenereerd; integratietests dekken code in `api`/`omod`.)
 
-## Checklist
+**Eerdere fout (opgelost):** repo-root-paden (`omod/target/site/jacoco/jacoco.xml` in parent `pom.xml`) werden per module verkeerd opgelost — Sonar zocht `omod/omod/target/...` en logde *No report imported*. Fix: property verwijderd; standaardpad per module.
 
-- [ ] Organization en project key gecontroleerd
-- [ ] `SONAR_TOKEN` in GitHub Actions secrets
-- [ ] GitHub-integratie actief
-- [ ] Automatic Analysis uitgeschakeld; CI-based Analysis ingeschakeld
-- [ ] Eerste PR-run groen (Quality Gate Passed)
-- [ ] Branch protection met SonarCloud-check
+Als import alsnog faalt: controleer CI-log op `OK: …/jacoco.xml` en `Reading report` in de Sonar-stap. Fallback: **unit-test**-artifact (`jacoco-report-pr-<nr>`) of lokaal `omod/target/site/jacoco/`. Zie [`04-testresultaten-baseline.md`](04-testresultaten-baseline.md).
 
-## Lokaal testen (optioneel)
+---
 
-```bash
-# Windows PowerShell
-$env:SONAR_TOKEN="<token>"
-mvn -B package -DskipTests
-mvn -B -pl omod test verify
-mvn -B sonar:sonar -Dsonar.qualitygate.wait=true
-```

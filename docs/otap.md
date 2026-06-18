@@ -155,17 +155,23 @@ Optioneel: `SNYK_TOKEN` als repository secret voor [`snyk.yml`](../.github/workf
 
 **Settings → Branches → Add rule** (per OTAP-branch)
 
-- [ ] Require a pull request before merging
-- [ ] Require status checks: `build`, `unit-test`, `SonarCloud Analysis` (workflow **CI**)
+- [x] Require a pull request before merging (`acceptatie`, `main`)
+- [x] Require status checks: `build`, `unit-test`, `SonarCloud Analysis` (workflow **CI**)
 - [ ] Optioneel: `dependency-review`, Snyk-job
 - [ ] Restrict pushes die de promotieketen overslaan (bijv. geen directe push `development` → `main`)
 
-| Branch | Minimale required checks |
-|--------|-------------------------|
-| `development` | `build`, `unit-test`, `SonarCloud Analysis` |
-| `pre-release` | `build`, `unit-test`, `SonarCloud Analysis` |
-| `acceptatie` | `build`, `unit-test`, `SonarCloud Analysis` |
-| `main` | `build`, `unit-test`, `SonarCloud Analysis` |
+| Branch | Minimale required checks | Status |
+|--------|-------------------------|--------|
+| `development` | `build`, `unit-test`, `SonarCloud Analysis` | — |
+| `pre-release` | `build`, `unit-test`, `SonarCloud Analysis` | — |
+| `acceptatie` | `build`, `unit-test`, `SonarCloud Analysis` | ✅ |
+| `main` | `build`, `unit-test`, `SonarCloud Analysis` | ✅ |
+
+**Verificatie (17 juni 2026, Teamlid A — A3):**
+
+- [x] Branch rules actief op `acceptatie` en `main` in [GitHub → Branches](https://github.com/bami-flogert/openmrs-module-htmlformentry/settings/branches)
+- [x] Verplichte status checks: `build`, `unit-test`, **SonarCloud Analysis** (workflow-job in `ci.yml`, niet de App-check *SonarCloud Code Analysis*)
+- [x] Checklist gedocumenteerd als bewijs (rubriek CI / NFR-M5)
 
 ### Lokaal draaien (development)
 
@@ -207,7 +213,7 @@ Dependabot (`package-ecosystem: docker`) opent PRs bij nieuwere image-versies.
 | Snyk skipped zonder token | Geen scan op forks of zonder `SNYK_TOKEN` | ✅ |
 | SonarCloud in CI | `sonarcloud`-job in `ci.yml` met `sonar.qualitygate.wait=true`; free plan: default Sonar way quality gate | ✅ |
 | SonarCloud op fork-PR’s | Job draait wél; GitHub suggereert `if: github.event.pull_request.head.repo.fork == false` om `SONAR_TOKEN` op onvertrouwde code te vermijden | ⚠️ Bewust niet geïmplementeerd (alleen interne PR’s) |
-| GitHub UI niet afgedwongen in code | Environment reviewers en branch protection vereisen handmatige repo-instellingen | ⚠️ |
+| GitHub UI niet afgedwongen in code | Branch protection handmatig geconfigureerd (`acceptatie`, `main`); environment reviewers apart | ✅ branch protection |
 
 Voor echte gescheiden OTAP-hosting zijn self-hosted runners of deploy naar externe VMs nodig.
 
