@@ -63,6 +63,16 @@ mvn -B -pl api-tests "-Dtest=ObsTagTest,HtmlFormTest,FormEntrySessionTest,HtmlFo
 | **Sonar-dashboard (PR #31)** | [sonarcloud.io/…&pullRequest=31](https://sonarcloud.io/dashboard?id=bami-flogert_openmrs-module-htmlformentry&pullRequest=31) |
 | **JaCoCo-artifact** | `jacoco-report-pr-31` (GitHub Actions artifact, 14 dagen bewaard) |
 
+**JaCoCo-import fix (PR #37):**
+
+| Item | Waarde |
+|------|--------|
+| **CI-run (PR #37, groen)** | [actions/runs/27749957935](https://github.com/bami-flogert/openmrs-module-htmlformentry/actions/runs/27749957935) |
+| **SonarCloud Analysis job** | [job/82097648018](https://github.com/bami-flogert/openmrs-module-htmlformentry/actions/runs/27749957935/job/82097648018) |
+| **JaCoCo verify-stap** | `OK: omod/.../jacoco.xml`, `OK: api/.../jacoco.xml` |
+| **Quality Gate** | **PASSED** |
+| **Sonar-dashboard (PR #37)** | [sonarcloud.io/…&pullRequest=37](https://sonarcloud.io/dashboard?id=bami-flogert_openmrs-module-htmlformentry&pullRequest=37) |
+
 ---
 
 ## SonarCloud — voor/na (PoC-scope)
@@ -90,7 +100,7 @@ Handoff-metrieken voor [`07-validatie-voor-na.md`](07-validatie-voor-na.md) (Tea
 
 Gevolg van Move Method + Extract Method; geen gedragsregressie (58 regressie-subset-tests + 8 timestamp-tests groen). Zie [`06-verantwoording-tooling.md`](onderhoudbaarheid/06-verantwoording-tooling.md).
 
-> **JaCoCo in Sonar:** fix toegepast (verwijderd `sonar.coverage.jacoco.xmlReportPaths` met repo-root-paden; Sonar leest nu `target/site/jacoco/jacoco.xml` per module). CI-verificatie na PR-merge volgt in § CI-bewijs.
+> **JaCoCo in Sonar:** fix geverifieerd op PR #37 — standaardpad per module; CI-log toont `OK` voor `api` en `omod` jacoco.xml + Quality Gate **PASSED**. Modules zonder productiecode (`api-tests`, `api-1.9`, …) loggen verwacht *No report imported*. PoC-coverage (`~63%` controller) blijft leidend via JaCoCo lokaal/artifact; controleer coverage % in Sonar-dashboard PR #37.
 
 ---
 

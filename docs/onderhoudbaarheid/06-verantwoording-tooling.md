@@ -62,7 +62,7 @@ In `[.github/workflows/ci.yml](../../.github/workflows/ci.yml)` wacht de `sonarc
 
 **Fix (optie 1):** property verwijderd uit `pom.xml` en `sonar-project.properties`. Sonar gebruikt nu het standaardpad `target/site/jacoco/jacoco.xml` per module (`api`, `omod`). CI-stap **Verify JaCoCo reports exist** in `ci.yml` bevestigt aanwezigheid vóór `sonar:sonar` (`api-tests` heeft geen productiebroncode).
 
-**Verificatie:** CI-run en Sonar PR-link worden na merge-PR gedocumenteerd in [`04-testresultaten-baseline.md`](../04-testresultaten-baseline.md) (ronde 2).
+**Verificatie (PR #37):** [CI-run 27749957935](https://github.com/bami-flogert/openmrs-module-htmlformentry/actions/runs/27749957935) — JaCoCo verify `OK` voor `api` + `omod`; Sonar-log: `QUALITY GATE STATUS: PASSED`; dashboard [PR #37](https://sonarcloud.io/dashboard?id=bami-flogert_openmrs-module-htmlformentry&pullRequest=37). Modules zonder `src/main` (`api-tests`) en versie-api's zonder eigen jacoco.xml loggen nog *No report imported* — verwacht.
 
 ### Nieuwe smells — trade-off
 
