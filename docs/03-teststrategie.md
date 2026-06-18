@@ -15,7 +15,7 @@
 | Testresultaten baseline              | `[04-testresultaten-baseline.md](04-testresultaten-baseline.md)`          |
 | AI-verantwoording tests              | `[05-verantwoording-ai-tests.md](05-verantwoording-ai-tests.md)`          |
 | Logging (security)                   | `[08-logging.md](08-logging.md)`                                          |
-| Validatie voor/na PoC                | `[07-validatie-voor-na.md](07-validatie-voor-na.md)` *(nog aan te maken)* |
+| Validatie voor/na PoC                | `[07-validatie-voor-na.md](07-validatie-voor-na.md)` |
 
 
 ---
