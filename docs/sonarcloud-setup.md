@@ -59,7 +59,7 @@ Als de scan draait maar Maven eindigt met *QUALITY GATE STATUS: FAILED*, werkt `
 
 Sonar leest per Maven-module standaard `target/site/jacoco/jacoco.xml` (gegenereerd door `jacoco:report` in de `verify`-fase). Geen custom `sonar.coverage.jacoco.xmlReportPaths` nodig.
 
-De `sonarcloud`-job in `ci.yml` bevat een stap **Verify JaCoCo reports exist** die controleert op `api`, `api-tests` en `omod` vóór `sonar:sonar`.
+De `sonarcloud`-job in `ci.yml` bevat een stap **Verify JaCoCo reports exist** die controleert op `api` en `omod` vóór `sonar:sonar`. (`api-tests` heeft geen `src/main` — daar wordt geen `jacoco.xml` gegenereerd; integratietests dekken code in `api`/`omod`.)
 
 **Eerdere fout (opgelost):** repo-root-paden (`omod/target/site/jacoco/jacoco.xml` in parent `pom.xml`) werden per module verkeerd opgelost — Sonar zocht `omod/omod/target/...` en logde *No report imported*. Fix: property verwijderd; standaardpad per module.
 

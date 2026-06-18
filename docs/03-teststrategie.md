@@ -333,7 +333,7 @@ Twee relevante jobs:
 | `sonarcloud` | `mvn -B -pl api,api-tests,omod -am test verify` + verify JaCoCo XML + `sonar:sonar` | OMOD + **logging audit tests** + JaCoCo; Sonar importeert `target/site/jacoco/jacoco.xml` per module |
 
 
-SonarCloud leest JaCoCo per module op het standaardpad `target/site/jacoco/jacoco.xml` (geen repo-root-paden in `pom.xml`). De job controleert aanwezigheid van de drie rapporten vóór de scan.
+SonarCloud leest JaCoCo per module op het standaardpad `target/site/jacoco/jacoco.xml` (geen repo-root-paden in `pom.xml`). De job controleert `api` en `omod` vóór de scan (`api-tests` is test-only, geen `jacoco.xml`).
 
 ### 8.2 Metadata per testrun
 

@@ -60,7 +60,7 @@ In `[.github/workflows/ci.yml](../../.github/workflows/ci.yml)` wacht de `sonarc
 
 **Oorzaak:** `sonar.coverage.jacoco.xmlReportPaths` in parent `pom.xml` gebruikte repo-root-paden (`omod/target/...`). Sonar resolveert die per module vanuit de module-directory, waardoor het rapport niet gevonden werd (*No report imported*).
 
-**Fix (optie 1):** property verwijderd uit `pom.xml` en `sonar-project.properties`. Sonar gebruikt nu het standaardpad `target/site/jacoco/jacoco.xml` per module (`api`, `api-tests`, `omod`). CI-stap **Verify JaCoCo reports exist** in `ci.yml` bevestigt aanwezigheid vóór `sonar:sonar`.
+**Fix (optie 1):** property verwijderd uit `pom.xml` en `sonar-project.properties`. Sonar gebruikt nu het standaardpad `target/site/jacoco/jacoco.xml` per module (`api`, `omod`). CI-stap **Verify JaCoCo reports exist** in `ci.yml` bevestigt aanwezigheid vóór `sonar:sonar` (`api-tests` heeft geen productiebroncode).
 
 **Verificatie:** CI-run en Sonar PR-link worden na merge-PR gedocumenteerd in [`04-testresultaten-baseline.md`](../04-testresultaten-baseline.md) (ronde 2).
 
