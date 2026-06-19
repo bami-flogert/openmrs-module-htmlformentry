@@ -13,6 +13,8 @@
 - **Critical:** 2 | **High:** 4 | **Medium:** 1 | **Low:** 0
 - **Baseline risk score:** 47.2 (som max-CVSS per component, cap 10)
 
+**Relatie met het security-backlog.** De Snyk-scan over alle Maven-submodules meldt **223 unieke CVE's** (zie [`06-security-backlog.md`](06-security-backlog.md) §6.1). Dit patchadvies bevat daarvan een **subset van 7**: componenten met een concreet upgrade-pad in de huidige SBOM en de hoogste CVSS-impact. Het backlog registreert daarnaast items zonder directe fix (platform `provided`), false positives en gebundelde front-end-libraries die Snyk Maven niet ziet. Gebruik dit document voor **patchvolgorde**; gebruik het backlog voor **volledige risicobeoordeling**.
+
 ## 2. Geprioriteerde patchvolgorde (Maven)
 
 | # | Component | Huidig | Advies | CVE(s) | CVSS | Reden prioriteit |

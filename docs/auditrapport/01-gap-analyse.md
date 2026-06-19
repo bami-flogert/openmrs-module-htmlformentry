@@ -35,15 +35,15 @@
 | 6 | UI-niveau toegangscontrole op patiëntformulieren | ✅ Aanwezig | `patientHtmlForms.jsp:3` — `<openmrs:hasPrivilege privilege="Form Entry">` |
 | 7 | Rolgebaseerde toegangscontrole op API-laag | ⚠️ Gedeeltelijk | Service-methoden in `HtmlFormEntryServiceImpl` bevatten geen `@Authorized`-annotaties; handhaving verloopt uitsluitend via de OpenMRS-kerninfrastructuur |
 | 8 | Beveiliging van REST/DWR-eindpunten | ⚠️ Gedeeltelijk | `config.xml:98-114` — DWR-methoden zijn geconfigureerd, maar er zijn geen expliciete privilege-guards op `DWRHtmlFormEntryService` zichtbaar buiten de sessiecontrole |
-| 9 | Documentatie toegangsbeheerbeleid | ⚠️ Gedeeltelijk | [`docs/security.md`](../security.md) — vulnerability disclosure; geen privilege-matrix of OTAP-toegangsbeleid (zie [`otap.md`](../otap.md)) |
+| 9 | Documentatie toegangsbeheerbeleid | ⚠️ Gedeeltelijk | [`docs/security.md`](../security.md) — kwetsbaarheidsmelding + privilege-matrix; OTAP-toegang in [`otap.md`](../otap.md) |
 
 ### Gebreken
 
 - **Gebrek:** `@Authorized`-annotaties ontbreken op serviceklassen — bij een misconfiguratie van de beveiligingscontext zou de API-laag toegankelijk kunnen zijn zonder privilege-check.  
   **Verbetering:** Voeg `@Authorized({PrivilegeConstants.MANAGE_FORMS})` toe aan schrijfmethoden in `HtmlFormEntryServiceImpl`.
 
-- **Gebrek:** Geen gedocumenteerd overzicht van welke rollen welke privileges vereisen.  
-  **Verbetering:** Maak een privilege-matrix op in `docs/` of in `config.xml` als commentaar. OTAP- en pipeline-toegang is wel gedocumenteerd in [`otap.md`](../otap.md) en [`02-pipeline-compliance.md`](02-pipeline-compliance.md).
+- **Gebrek:** Geen mapping van rollen naar privileges — de module documenteert wel vereiste privileges per functie, maar niet welke standaardrollen die krijgen (instellingsbeleid).  
+  **Verbetering:** Privilege-matrix staat in [`security.md`](../security.md); rol-toewijzing documenteren in implementatiehandleiding van de zorginstelling.
 
 ---
 
@@ -61,7 +61,7 @@
 | 2 | Authenticatie via platform-context | ✅ Aanwezig | `DWRHtmlFormEntryService.java:29` — `Context.authenticate(user, pass)` delegeert naar OpenMRS-kernbeveiliging |
 | 3 | Ingelogde gebruiker ophalen bij gegevensverwerking | ✅ Aanwezig | `HtmlFormEntryController.java:237,258` — `Context.getAuthenticatedUser()` bij formulierverwerking |
 | 4 | Ingelogde gebruiker ophalen bij formuliergeneratie | ✅ Aanwezig | `HtmlFormEntryGenerator.java:814,834` — gebruikerscontext voor providertoewijzing |
-| 5 | CSRF-bescherming | ❌ Afwezig | Geen CSRF-tokens aangetroffen in formulieren, filters of controllers |
+| 5 | CSRF-bescherming | ⚠️ Gedeeltelijk | Geen synchronizer-tokens modulebreed; wel same-origin check op `DeleteEncounterController` (`isSameOrigin`) na pentest HFE-02 — zie [`bevinding-hfe-02-na.md`](../pentest/bevinding-hfe-02-na.md) |
 | 6 | Sessietime-out / automatische vergrendeling | ❌ Afwezig | Niet geconfigureerd in de module; volledig afhankelijk van de OpenMRS-container |
 | 7 | Multi-factor authenticatie | ❌ Afwezig | Niet aanwezig — valt buiten de moduleScope, maar er is ook geen koppeling met MFA-extensies |
 | 8 | Wachtwoordbeleid | ❌ Afwezig | Niet in scope voor deze module; geen verwijzing naar platform-wachtwoordbeleid |
@@ -69,8 +69,8 @@
 
 ### Gebreken
 
-- **Gebrek:** Geen CSRF-bescherming op formulierverzendingen — kwetsbaar voor cross-site request forgery bij formulierinvoer van patiëntgegevens.  
-  **Verbetering:** Implementeer synchronizer-token patroon of gebruik Spring Security CSRF-ondersteuning in `HtmlFormEntryController`.
+- **Gebrek (gedeeltelijk gemitigeerd):** Geen module-brede CSRF-bescherming op formulierverzendingen — kwetsbaar voor cross-site request forgery bij patiëntgegevens. Op `deleteEncounter` blokkeert een same-origin check (`Origin`/`Referer`) tokenloze cross-site POSTs (pentest HFE-02). Dat is geen volwaardig synchronizer-token op alle state-changing endpoints.  
+  **Verbetering:** Breid CSRF-bescherming uit: synchronizer-token patroon of Spring Security CSRF in `HtmlFormEntryController` en overige POST-endpoints.
 
 - **Gebrek:** Sessiebeheer volledig gedelegeerd aan de container zonder modulespecifieke instellingen.  
   **Verbetering:** Documenteer de verwachte sessietime-out en verwijs naar de OpenMRS Runtime Properties (`web.xml`).
@@ -89,22 +89,22 @@
 |---|--------|--------|--------------------------------------------------------------------------------------------------------------------------------------------|
 | 1 | Logging framework geconfigureerd | ✅ Aanwezig | `api/src/main/resources/log4j.xml:6-16` — Log4j met CONSOLE-appender, ISO8601-tijdstempel, methodepatroon                                  |
 | 2 | Logger aanwezig in kernklassen | ✅ Aanwezig | `FormEntrySession.java:79`, `FormSubmissionController.java:31`, `HtmlFormEntryServiceImpl.java:44`, `HtmlFormEntryController.java:54`      |
-| 3 | Toegangslogging bij patiëntgegevens | ✅ Aanwezig | `FormEntrySession.java:145-148` — logt patiënt-ID, geboortedatum, geslacht en naam bij elke formuliersessie                                |
+| 3 | Toegangslogging bij patiëntgegevens | ✅ Aanwezig | `FormEntryAuditLogFormatter.java` + `FormEntrySession.java` — metadata-only INFO bij sessie-start (`action=session.created`) en succesvolle submit (`action=submit.success`); zie [`08-logging.md`](../08-logging.md) |
 | 4 | Foutlogging bij formulierverwerking | ✅ Aanwezig | `HtmlFormEntryController.java:285,323,329` — `log.error` bij validatie-, invoer- en verzendfouten                                          |
 | 5 | Audittrail via creator/changedBy op data | ✅ Aanwezig | `HtmlFormEntryServiceImpl.java:120,124` — `setCreator` / `setChangedBy` met ingelogde gebruiker                                            |
-| 6 | Audittrail bij void-acties | ✅ Aanwezig | `FormEntrySession.java:660` — `log.debug("voiding obs: " + o.getObsId())` en `FormSubmissionActions.java:320`                              |
-| 7 | Wijzigingsregistratie | ✅ Aanwezig | `FormSubmissionActions.java:335` — logt `oldString + " -> " + newString` per concept                                                       |
+| 6 | Audittrail bij void-acties | ✅ Aanwezig | `FormEntrySession` — DEBUG via `FormEntryAuditLogFormatter.formatVoidObsDebugMessage()`; `FormSubmissionActions` — VOID/CHANGED via `formatObsReference()` |
+| 7 | Wijzigingsregistratie | ✅ Aanwezig | `FormSubmissionActions` + `FormEntryAuditLogFormatter` — DEBUG alleen `obsId`/`conceptId`; standaard uitgeschakeld door INFO-default in `log4j.xml` |
 | 8 | Creator-tracking op orders en programma-inschrijvingen | ✅ Aanwezig | `FormSubmissionActions.java:511,533`, `DrugOrderSubmissionElement.java:622,653`                                                            |
 | 9 | Logbescherming | ❌ Afwezig | Logbestanden worden naar console/file geschreven zonder integriteitsbeveiliging                                                            |
 | 10 | Gecentraliseerde log-aggregatie | ❌ Afwezig | Geen koppeling met externe logging-systemen                                                                                                |
 | 11 | Retentiebeleid voor logbestanden | ❌ Afwezig | Log4j-configuratie stelt geen rotatie of retentietermijn in                                                                                |
 | 12 | Beveiligingsgebeurtenissen apart gelogd | ⚠️ Gedeeltelijk | Beveiligingsgebeurtenissen worden niet apart gecategoriseerd — alles gaat naar dezelfde logger                                             |
-| 13 | Logging van PII conform AVG/NEN-7510 | ⚠️ Gedeeltelijk | `FormEntrySession.java:145-148` logt patiëntnaam, geboortedatum en geslacht in plaintext — dit is AVG die beschermd opgeslagen moet worden |
+| 13 | Logging van PII conform AVG/NEN-7510 | ⚠️ Gedeeltelijk | INFO-paden PoC-fix (geen namen/dob/gender); rest-risico: `HtmlFormEntryUtil.java:327` logt volledige XML op ERROR |
 
 ### Gebreken
 
-- **Gebrek:** PII (patiëntnaam, geboortedatum, geslacht) wordt in plaintext gelogd.  
-  **Verbetering:** Vervang in `FormEntrySession.java:145-148` de volledige naam door een gepseudonimiseerde identifier (bijv. enkel `patient.getPatientId()`).
+- **Gebrek (opgelost in PoC):** PII (patiëntnaam, geboortedatum, geslacht) werd in plaintext gelogd op INFO.  
+  **Mitigatie:** metadata-only logging in [`08-logging.md`](../08-logging.md) — `session.created` en `submit.success`. Pentest: [`bevinding-hfe-04-voor.md`](../pentest/bevinding-hfe-04-voor.md) / [`bevinding-hfe-04-na.md`](../pentest/bevinding-hfe-04-na.md).
 
 - **Gebrek:** Geen logretentie- of rotatiebeleid geconfigureerd — logbestanden kunnen onbeperkt groeien of worden overschreven.  
   **Verbetering:** Voeg Log4j `RollingFileAppender` toe met retentie van minimaal 1 jaar (NEN-7510 vereiste voor medische logs).
@@ -118,6 +118,6 @@
 
 | Control | Status | Kritieke hiaten |
 |---------|--------|-----------------|
-| A.8.3 Toegangsbeveiliging | ⚠️ Gedeeltelijk | Ontbrekende `@Authorized` op service-laag; geen privilege-matrix |
-| A.8.5 Authenticatie | ⚠️ Gedeeltelijk | Geen CSRF-bescherming; sessiebeheer niet modulespecifiek geconfigureerd |
-| A.8.15 Logging | ⚠️ Gedeeltelijk | PII in plaintext in logs; geen retentiebeleid; geen log-integriteitsbeveiliging |
+| A.8.3 Toegangsbeveiliging | ⚠️ Gedeeltelijk | Ontbrekende `@Authorized` op service-laag; geen rol→privilege-mapping (privilege-matrix wel gedocumenteerd) |
+| A.8.5 Authenticatie | ⚠️ Gedeeltelijk | CSRF alleen op `deleteEncounter` (same-origin); geen tokens modulebreed; sessiebeheer niet modulespecifiek geconfigureerd |
+| A.8.15 Logging | ⚠️ Gedeeltelijk | Geen retentiebeleid; geen log-integriteitsbeveiliging; geen dedicated security logger; rest-risico XML in ERROR-log |

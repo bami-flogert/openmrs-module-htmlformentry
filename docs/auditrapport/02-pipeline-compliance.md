@@ -10,9 +10,9 @@
 | NEN-7510 Control | Omschrijving | Pipeline-maatregel | Bewijs | Status |
 |---|---|---|---|---|
 | **A.8.3** Toegangsbeveiliging | Toegang tot omgevingen beperken op basis van autorisatie | Vier OTAP-omgevingen via GitHub Environments (`dev` / `test` / `acceptatie` / `prod`); deploy alleen op matching branch | `deploy.yml` — `if: github.ref == 'refs/heads/development'` etc.<br>`deploy-accept` op `acceptatie`<br>[`otap.md`](../otap.md) — omgevingstabel | ⚠️ Gedeeltelijk — branch-guards aanwezig; required reviewers en deployment-branch rules moeten in GitHub UI worden ingesteld |
-| **A.8.3** Toegangsbeveiliging | Geheimen niet in plaintext opslaan | Databasewachtwoorden via GitHub Secrets of `.env` (lokaal); compose gebruikt env-vars | `deploy.yml` — `secrets.MYSQL_*`<br>alle compose-overlays — `${MYSQL_PASSWORD}`<br>[`.env.example`](../.env.example) | ✅ Aanwezig |
+| **A.8.3** Toegangsbeveiliging | Geheimen niet in plaintext opslaan | Databasewachtwoorden via GitHub Secrets of `.env` (lokaal); compose gebruikt env-vars | `deploy.yml` — `secrets.MYSQL_*`<br>alle compose-overlays — `${MYSQL_PASSWORD}`<br>[`.env.example`](../../.env.example) | ✅ Aanwezig |
 | **A.8.3** Toegangsbeveiliging | Voorkomen van overlappende deploys | Workflow concurrency per branch | `deploy.yml` — `concurrency: group: otap-${{ github.ref }}` | ✅ Aanwezig |
-| **A.8.3** Toegangsbeveiliging | Wijzigingen controleren vóór promotie | PR-workflow met build + tests + dependency review | `ci.yml` — `pull_request` naar OTAP-branches<br>`dependency-review-action@v4` | ✅ Aanwezig — branch protection moet checks verplicht stellen |
+| **A.8.3** Toegangsbeveil[02-pipeline-compliance.md](02-pipeline-compliance.md)iging | Wijzigingen controleren vóór promotie | PR-workflow met build + tests + dependency review | `ci.yml` — `pull_request` naar OTAP-branches<br>`dependency-review-action@v4` | ✅ Aanwezig — branch protection moet checks verplicht stellen |
 | **A.8.5** Authenticatie | Alleen geauthenticeerde gebruikers kunnen deployen | GitHub Actions vereist authenticatie; deploy na geslaagde build én unit-test | `deploy.yml` — `needs: [build, unit-test]` | ✅ Aanwezig |
 | **A.8.5** Authenticatie | Minimale rechten voor pipeline-token | Workflows gebruiken `permissions: read`; prod release job gebruikt `contents: write` | `deploy.yml` — `permissions: contents: read`<br>`publish-prod-release` — `contents: write` | ✅ Aanwezig |
 | **A.8.15** Logging | Artefacten bewaren als auditspoor | OMOD-artefact + JaCoCo-rapport + Snyk-resultaten als GitHub Actions artifacts | `deploy.yml` — `retention-days: 365` (OMOD)<br>`deploy.yml` — `jacoco-report` (30 dagen)<br>`snyk.yml` — `snyk-results` artifact | ✅ Aanwezig — JaCoCo-retentie korter dan OMOD; overweeg verlenging voor audit |
@@ -36,4 +36,4 @@
 | Logging & audittrail (A.8.15) | ⚠️ Gedeeltelijk — sterker dan initieel; Snyk niet hard gate |
 | OTAP-structuur | ✅ Vier fasen aanwezig; ⚠️ geen persistente hosts |
 
-**Prioritaire vervolgacties:** GitHub Environment protection rules en branch protection handmatig afronden (zie [`otap.md`](../otap.md)), Snyk als harde gate overwegen, persistente OTAP-hosts bij productie-inzet.
+**Prioritaire vervolgacties:** GitHub Environment protection rules en branch protection handmatig afronden (zie [`otap.md`](../otap.md)), Snyk als harde gate overwegen, persistente OTAP-hosts bij productie-inzet

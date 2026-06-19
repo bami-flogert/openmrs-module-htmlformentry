@@ -3,6 +3,7 @@ package org.openmrs.module.htmlformentry.web.controller;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.StringWriter;
 
 import javax.servlet.http.HttpServletRequest;
@@ -17,6 +18,7 @@ import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
 import org.openmrs.module.htmlformentry.FormEntrySession;
 import org.openmrs.module.htmlformentry.HtmlForm;
 import org.openmrs.module.htmlformentry.HtmlFormEntryUtil;
+import org.openmrs.util.OpenmrsUtil;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
@@ -71,7 +73,9 @@ public class HtmlFormFromFileController {
 				}
 			} else {
 				if (StringUtils.hasText(filePath)) {
-					f = new File(filePath);
+					// HFE-01: never trust the raw request parameter. Confine the read to a
+					// whitelisted base directory; reject absolute paths and ".." traversal.
+					f = resolveSafePreviewFile(filePath);
 				} else {
 					message = "You must specify a file path to preview from file";
 				}
@@ -111,5 +115,79 @@ public class HtmlFormFromFileController {
 		
 		model.addAttribute("message", message);
 		model.addAttribute("isFileUpload", isFileUpload);
+	}
+
+	/**
+	 * Global property that may override the directory under which form files are allowed to be
+	 * previewed. When unset, a dedicated {@code htmlformentry} folder inside the OpenMRS application
+	 * data directory is used.
+	 */
+	static final String GP_PREVIEW_BASE_DIR = "htmlformentry.previewBaseDirectory";
+
+	/**
+	 * Resolves the base directory that form-preview files must live in. The directory is created
+	 * when it does not yet exist so a fresh install has a safe, empty drop-zone instead of falling
+	 * back to the (secret-bearing) working/application directory.
+	 */
+	File getPreviewBaseDirectory() {
+		return resolveBaseDirectory(getConfiguredBaseDirectory(), getApplicationDataDirectory());
+	}
+
+	/** Seam around the global-property lookup so the base-dir resolution can be unit-tested. */
+	String getConfiguredBaseDirectory() {
+		return Context.getAdministrationService().getGlobalProperty(GP_PREVIEW_BASE_DIR);
+	}
+
+	/** Seam around the application-data-directory lookup so it can be stubbed in tests. */
+	String getApplicationDataDirectory() {
+		return OpenmrsUtil.getApplicationDataDirectory();
+	}
+
+	/**
+	 * Pure resolution of the preview base directory, split out from the static OpenMRS lookups so it
+	 * can be unit-tested. Uses {@code configured} when set, otherwise an {@code htmlformentry} folder
+	 * inside {@code applicationDataDirectory}, and creates the directory when it does not yet exist.
+	 */
+	File resolveBaseDirectory(String configured, String applicationDataDirectory) {
+		File base;
+		if (StringUtils.hasText(configured)) {
+			base = new File(configured);
+		} else {
+			base = new File(applicationDataDirectory, "htmlformentry");
+		}
+		if (!base.exists()) {
+			base.mkdirs();
+		}
+		return base;
+	}
+
+	/**
+	 * Resolves a user-supplied path against the preview base directory and guarantees the result
+	 * stays inside it (HFE-01 mitigation). Absolute paths and parent-directory traversal are
+	 * rejected, and the canonicalised result (symlinks resolved) must still be contained by the base
+	 * directory. Returns {@code null} for any unsafe or empty path, so the caller falls through to
+	 * the same generic "valid file path" message and no file-existence oracle is leaked.
+	 */
+	File resolveSafePreviewFile(String filePath) {
+		if (!StringUtils.hasText(filePath)) {
+			return null;
+		}
+		// Reject obvious traversal / absolute references up front.
+		if (filePath.contains("..") || new File(filePath).isAbsolute()) {
+			return null;
+		}
+		try {
+			File base = getPreviewBaseDirectory();
+			File resolved = new File(base, filePath).getCanonicalFile();
+			String basePath = base.getCanonicalPath() + File.separator;
+			if (!(resolved.getCanonicalPath() + File.separator).startsWith(basePath)) {
+				return null;
+			}
+			return resolved;
+		}
+		catch (IOException e) {
+			log.warn("Rejected unsafe preview path: " + filePath, e);
+			return null;
+		}
 	}
 }

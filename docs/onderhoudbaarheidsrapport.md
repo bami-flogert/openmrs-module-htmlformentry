@@ -31,7 +31,7 @@ We beoordelen onderhoudbaarheid aan de hand van **ISO/IEC 25010**, specifiek:
 | **Buiten PoC**             | `FormEntrySession` en overige `api`-klassen                                                      | Meegenomen in het begin.                      |
 
 
-> **Motivatie PoC-focus:** OMOD-controllers zijn het web-ingangspunt voor form entry. `HtmlFormEntryController` bevat expliciet technical depth (logica hoort in `FormEntrySession`, zie TODO in broncode). `FormEntrySession` (~1040 LOC) is waarschijnlijk de grootste hotspot, maar valt buiten de eerste PoC vanwege omvang en regressierisico.
+> **Motivatie PoC-focus:** OMOD-controllers zijn het web-ingangspunt voor form entry. `HtmlFormEntryController` bevat expliciet technical depth (logica hoort in `FormEntrySession`, zie TODO in broncode). `FormEntrySession` (~1228 LOC) is waarschijnlijk de grootste hotspot, maar valt buiten de eerste PoC vanwege omvang en regressierisico.
 
 ---
 
@@ -152,7 +152,7 @@ methode centraliseert request-parsing, sessie-opbouw en form-entry flow; meerder
 
 | Bestand / klasse                | Indicatie                   | CC / LOC      |
 | ------------------------------- | --------------------------- | ------------- |
-| `api/.../FormEntrySession.java` | Grootste klasse in api-laag | ~**1000** LOC |
+| `api/.../FormEntrySession.java` | Grootste klasse in api-laag | ~**1228** LOC |
 
 
 ---
@@ -245,14 +245,10 @@ Controllers in OMOD vertonen **mixed responsibilities**: HTTP-afhandeling, reque
 | S3776 op changed code     | **5 open in OMOD** (baseline)               | 0 new violations |
 
 
-**CI-workflow:** SonarCloud-stap **ontbreekt** in de repo. Bestaande workflows:
+**CI-workflow:** SonarCloud-stap is aanwezig in `.github/workflows/ci.yml` (`sonarcloud`-job, `sonar.qualitygate.wait=true`). De `deploy.yml` draait nog met `-DskipTests`, maar kwaliteitscontrole loopt via de aparte `ci.yml`.
 
-- `.github/workflows/deploy.yml` — `mvn package -DskipTests`, geen SonarCloud
-- `.github/workflows/sbom.yml` — SBOM-export, geen SonarCloud
-
-> **TODO (NFR-M5):** voeg een aparte CI-workflow toe met `mvn verify`, SonarCloud-scan (`sonar:sonar`) en `sonar.qualitygate.wait=true` als merge-voorwaarde.
-
-**Huidige deploy-workflow** draait zonder tests en zonder quality-gate-wait — baseline-CI dekt NFR-M5/M6 nog niet.
+- `.github/workflows/ci.yml` — `unit-test` + `sonarcloud` jobs, Quality Gate geborgd
+- `.github/workflows/deploy.yml` — `mvn package -DskipTests`, geen SonarCloud (bewust)
 
 ---
 
@@ -263,13 +259,10 @@ Controllers in OMOD vertonen **mixed responsibilities**: HTTP-afhandeling, reque
 
 | Aspect                              | Status                                                               |
 | ----------------------------------- | -------------------------------------------------------------------- |
-| SonarCloud op elke PR               | **Nee** — geen Sonar-stap in `.github/workflows/`                    |
-| Quality Gate zichtbaar in PR-checks | **Nee** — geen PR-check geconfigureerd                               |
+| SonarCloud op elke PR               | ✅ `ci.yml` triggert op `pull_request` en `push`                     |
+| Quality Gate zichtbaar in PR-checks | ✅ `sonar.qualitygate.wait=true` in `ci.yml` (`sonarcloud`-job)      |
 | Baseline op main (dit rapport)      | ✅ vastgelegd op **2026-06-11** (commit `c67d09b`)                    |
-| Voorbeeld-PR met analyse            | N.v.t. — SonarCloud draait buiten CI (handmatig / gekoppeld project) |
-
-
-> **TODO (NFR-M6):** SonarCloud-analyse triggeren op elke PR (bijv. `pull_request`-workflow) en quality-gate-resultaat als verplichte check tonen.
+| Branch protection                   | Zie [`sonarcloud-setup.md`](sonarcloud-setup.md) voor status         |
 
 ---
 
@@ -282,7 +275,7 @@ Controllers in OMOD vertonen **mixed responsibilities**: HTTP-afhandeling, reque
 | -------------------------------------------- | ------------------------------------------ |
 | ≥ 8 metrieken in §3                          | ✅ alle 8 metrieken ingevuld                |
 | Traceerbaarheid hotspots → metriek + locatie | ✅ OMOD CC-tabel met bestand, methode en CC |
-| Voor/na-metrieken PoC                        | ⏳ volgt in validatiedocument               |
+| Voor/na-metrieken PoC                        | ✅ zie [`07-validatie-voor-na.md`](07-validatie-voor-na.md)         |
 
 
 ---
@@ -296,7 +289,7 @@ Input voor het verbeteronderzoek (rubric rij 3). Prioritering op **impact** (eff
 | ----- | ----------------------------------------------------- | ---------- | ---------------------------------------------------------- | ---------------------------------------------------------- | --------------------------------------------------------- |
 | **1** | `HtmlFormEntryController.getFormEntrySession` (CC 52) | M1, M3, M4 | **Hoog** — web-ingang form entry; expliciete TODO in code  | **Middel** — beperkt tot OMOD, delegeer naar bestaande api | Hoogste PoC-waarde; directe link met known technical debt |
 | **2** | `HtmlFormEncounterController.getValue` (CC 35)        | M1, M4     | **Middel–hoog** — encounter flow                           | **Middel**                                                 | Secundaire PoC-kandidaat binnen scope                     |
-| **3** | `FormEntrySession` (~1040 LOC)                        | M1, M3, M4 | **Zeer hoog** — kern domeinlogica                          | **Hoog** — regressierisico, veel callers                   | Buiten PoC; wel vermelden in baseline                     |
+| **3** | `FormEntrySession` (~1228 LOC)                        | M1, M3, M4 | **Zeer hoog** — kern domeinlogica                          | **Hoog** — regressierisico, veel callers                   | Buiten PoC; wel vermelden in baseline                     |
 | **4** | `PopupWidgetController.personSearch` (CC 55)          | M1         | **Middel** — hulp-UI                                       | **Laag–middel**                                            | Buiten PoC; lagere business-prioriteit                    |
 | **5** | Codeduplicatie (§4.2)                                 | M2         | **Laag** — 1,9% module-breed, 1,7% OMOD; onder NFR-drempel | **NVT** — geen actie in PoC                                | Geen prioriteit; baseline voldoet al aan NFR-M2           |
 
@@ -312,7 +305,7 @@ Deze onderdelen vallen **niet** in de eerste PoC, maar zijn wél meegenomen in d
 
 | Onderdeel                                                                         | Reden buiten PoC                                    | Baseline-indicatie                                                                                          |
 | --------------------------------------------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `FormEntrySession` + overige `api`-klassen                                        | ~1000 LOC, centraal in domein, hoog regressierisico | Heeft zelf een CC van 30. `applyAction()` heeft 147 CC. `getSetLastSubmissionFieldsJavascript()` is 92 CC.  |
+| `FormEntrySession` + overige `api`-klassen                                        | ~1228 LOC, centraal in domein, hoog regressierisico | Heeft zelf een CC van 30. `applyAction()` heeft 147 CC. `getSetLastSubmissionFieldsJavascript()` is 92 CC.  |
 | `PopupWidgetController`, `HtmlFormSearchController`, `HtmlFormFromFileController` | Buiten kritieke PoC-focus                           | CC resp. 55, 29, 20 (§4.1)                                                                                  |
 | Versie-specifieke `api-` submodules                                               | Parallelle API-implementaties per OpenMRS-versie    | Duplicatie module-breed 1,9% geen aparte hotspot; zie `baseline-scope-export.txt` voor nLines per submodule |
 
@@ -338,16 +331,16 @@ Deze onderdelen vallen **niet** in de eerste PoC, maar zijn wél meegenomen in d
 
 1. **Cognitive complexity** is het acute baseline-probleem: **97** violations module-breed, **5** in OMOD, alle boven drempel 15.
 2. `HtmlFormEntryController.getFormEntrySession` (CC 52) is de beste PoC-kandidaat: expliciete technical debt, hoge impact, beperkte scope.
-3. `FormEntrySession` is de strategische hotspot op langere termijn (~1040 LOC); niet negeren in baseline.
+3. `FormEntrySession` is de strategische hotspot op langere termijn (~1228 LOC); niet negeren in baseline.
 4. **Duplicatie** is laag (1,9% / 1,7% ✅); **code smells** hoog (1.230 / 59 ❌); **coverage** laag (16,4% / 1,9% ❌); **Quality Gate** Passed voor nieuwe code ✅ (§3).
-5. **CI/SonarCloud-integratie** ontbreekt nog in de repo, zie TODO's in §4.5 en §4.6 (NFR-M5/M6).
+5. **CI/SonarCloud-integratie** is aanwezig via `ci.yml` (NFR-M5/M6); voor/na-metrieken PoC zijn gedocumenteerd in [`07-validatie-voor-na.md`](07-validatie-voor-na.md).
 
 ### NFR-status baseline (acceptatiecriterium 1)
 
 
 | Acceptatiecriterium                        | Status                                                              |
 | ------------------------------------------ | ------------------------------------------------------------------- |
-| Baseline-metrieken module-breed vastgelegd | ✅ §3 compleet (8 metrieken); CI-integratie nog open (TODO §4.5/4.6) |
+| Baseline-metrieken module-breed vastgelegd | ✅ §3 compleet (8 metrieken)                                         |
 | Traceerbare hotspots met locatie           | ✅ OMOD CC gedocumenteerd                                            |
 | PoC-focus onderbouwd                       | ✅ §5                                                                |
 

@@ -16,11 +16,13 @@ De SCA-scan uit de CI-pipeline vond over alle Maven-submodules samen **223 uniek
 
 **Dependency-context:** bijna alle Maven-bevindingen komen transitief binnen via `org.openmrs.api:openmrs-api@1.9.9` en `org.openmrs.web:openmrs-web@1.9.9` (scope `provided`). Het OpenMRS-platform levert deze libraries tijdens runtime; de module bundelt ze niet zelf. Hoe groot het risico echt is hangt dus af van de platformversie waarop de module draait. De scan tegen de minimaal ondersteunde versie (1.9.9) is het worst-case scenario. De gebundelde JavaScript-libraries zitten wél in het eigen omod-bestand. Daar is de module dus zelf verantwoordelijk voor.
 
+**ID-nummering:** de IDs in dit register (`HFE-001`, `HFE-002`, …) zijn **CVE/dependency-backlog**-items. Pentest-bevindingen gebruiken een aparte reeks (`HFE-01`, `HFE-02`, …) in [`../pentest/README.md`](../pentest/README.md). Die twee reeksen zijn niet hetzelfde.
+
 ## 6.2 Legenda
 
 | Veld | Betekenis |
 |------|-----------|
-| Prioriteit | H = direct oppakken (Sprint 3-kandidaat) · M = inplannen · L = accepteren of monitoren |
+| Prioriteit | H = direct oppakken · M = inplannen · L = accepteren of monitoren |
 | Status | Open · In behandeling · False positive |
 | Contextuele score | CVSS bijgesteld op bereikbaarheid van het aanvalspad + geraakt kroonjuweel (h3) |
 
@@ -36,6 +38,7 @@ De SCA-scan uit de CI-pipeline vond over alle Maven-submodules samen **223 uniek
 | HFE-006 | groovy 1.8.3 (directe dependency, `api/pom.xml:55`) | CVE-2015-3253 / CWE-74 | 9.8 | 5.5 | 8.8 · 8.28 | M | Open | n.v.t. |
 | HFE-007 | handlebars 1.0.12 (gebundeld) | CVE-2019-19919 / CWE-1321 | 9.8 | 5.5 | 8.28 | M | Open | n.v.t. |
 | HFE-008 | commons-codec 1.10 (via openmrs-test → dbunit) | SNYK-JAVA-COMMONSCODEC-561518 / CWE-200 | 3.7 | - | 8.8 | L | **False positive** | Komt alleen via `openmrs-test`/`dbunit` in de test-classpath. Zit niet in het productie-omod-bestand en is in productie dus niet bereikbaar. |
+| HFE-009 | `HtmlFormEntryController.loadSession()` (eigen omod-code, geen dependency) | Geen CVE (eigen code) / CWE-502 | n.v.t. — geen scanbare dependency | 8.5 | 8.8 · 8.15 | **H** | Open — geïdentificeerd, **niet gemitigeerd** | n.v.t. |
 
 ## 6.4 Toelichting per bevinding
 
@@ -55,6 +58,6 @@ De SCA-scan uit de CI-pipeline vond over alle Maven-submodules samen **223 uniek
 
 **HFE-008 - commons-codec 1.10 (false positive).** De scanner meldt dit wel, maar het pad loopt via `org.openmrs.test:openmrs-test@2.2.0 → dbunit@2.5.4`. Dat is een pure test-dependency. De component zit niet in het productie-omod-bestand en is in productie dus niet bereikbaar. We laten de bevinding bewust in het register staan met deze onderbouwing, in plaats van hem stil te verwijderen. Zo is het beoordelingsproces controleerbaar (control 8.8). *Let op:* de root-`pom.xml` declareert zelf ook `commons-codec:1.10` met scope `provided`. Bij een platform-upgrade verdwijnt deze bevinding vanzelf.
 
-## 6.5 Vervolg
+## 6.5 Eigen-code bevinding buiten Snyk-scope (HFE-009)
 
-De H-prioriteiten uit dit register zijn de input voor het patchadvies (h7) en voor de keuze van de PoC-mitigaties in Sprint 3 (taak 3.1). HFE-003 en HFE-006 zijn daarvoor de beste kandidaten. Beide zijn binnen de module zelf op te lossen, zonder dat er een platform-upgrade nodig is. En voor beide kun je met een hertest aantonen dat de fix werkt (taak 3.2/3.3).
+De Snyk SCA-scan vindt alleen kwetsbaarheden in afhankelijkheden, niet in 

@@ -332,7 +332,7 @@ public class FormSubmissionActions {
 		String oldString = existingObs.getValueAsString(Context.getLocale());
 		String newString = newObs.getValueAsString(Context.getLocale());
 		if (log.isDebugEnabled() && concept != null) {
-			log.debug("For concept " + concept.getName(Context.getLocale()) + ": " + oldString + " -> " + newString);
+			log.debug(printObsHelper(existingObs) + " action=changed");
 		}
 		boolean valueChanged = !newString.equals(oldString);
 		// TODO: handle dates that may equal encounter date
@@ -633,7 +633,8 @@ public class FormSubmissionActions {
 	}
 	
 	private String printObsHelper(Obs obs) {
-		return obs.getConcept().getName(Context.getLocale()) + " = " + obs.getValueAsString(Context.getLocale());
+		Integer conceptId = obs.getConcept() != null ? obs.getConcept().getConceptId() : null;
+		return FormEntryAuditLogFormatter.formatObsReference(obs.getObsId(), conceptId);
 	}
 	
 	/**
