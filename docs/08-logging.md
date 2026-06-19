@@ -125,7 +125,6 @@ Pentest-bewijs: [HFE-04 vóór](pentest/bevinding-hfe-04-voor.md) · [HFE-04 na]
 
 | Document | Relatie |
 |----------|---------|
-| [`opdracht/non-functionals.md`](../opdracht/non-functionals.md) | NFR-S1, NFR-S2, NFR-S6 |
 | [`auditrapport/01-gap-analyse.md`](auditrapport/01-gap-analyse.md) | Baseline A.8.15 |
 | [`03-teststrategie.md`](03-teststrategie.md) | §7.6 logging-audittests |
-| [`opdracht/voortgang-en-todo.md`](../opdracht/voortgang-en-todo.md) | Pentest-status |
+| [`pentest/README.md`](pentest/README.md) | Pentest-status |

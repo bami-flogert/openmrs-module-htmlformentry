@@ -38,7 +38,7 @@ Deze teststrategie beschrijft **hoe** we de kwaliteit en testbaarheid van de Ope
 | ------------------- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
 | **PoC-testscope**   | `omod` — webcontrollers, nieuwe klassen na extractie                       | Primair: nieuwe en bestaande tests moeten groen blijven                     |
 | **Module-baseline** | `api`, `api-tests`, `api-1.x`                                              | Context: bestaande suite draaien en resultaten rapporteren                  |
-| **Buiten scope**    | `FormEntrySession` (~1040 LOC), `release-tests`, volledige suite-reparatie | Vermelden als bekende technische schuld; geen fix-verplichting in deze fase |
+| **Buiten scope**    | `FormEntrySession` (~1228 LOC), `release-tests`, volledige suite-reparatie | Vermelden als bekende technische schuld; geen fix-verplichting in deze fase |
 
 
 De PoC-testscope sluit aan op de scope uit `[onderhoudbaarheidsrapport.md](onderhoudbaarheidsrapport.md)` §1.
@@ -186,7 +186,7 @@ mvn -pl api,api-tests test
 | Onderdeel                                         | Reden                                             |
 | ------------------------------------------------- | ------------------------------------------------- |
 | Alle ~70 falende `api-tests` repareren            | Hoog effort, laag rendement voor PoC-focus        |
-| `FormEntrySession` testen/refactoren              | ~1040 LOC, hoog regressierisico                   |
+| `FormEntrySession` testen/refactoren              | ~1228 LOC, hoog regressierisico                   |
 | `release-tests` smoke/integration                 | Apart profiel, Jetty-server; te traag voor sprint |
 | Blanket coverage-drempel (bijv. 60% module-breed) | Niet realistisch t.o.v. baseline 1,9% PoC-scope   |
 

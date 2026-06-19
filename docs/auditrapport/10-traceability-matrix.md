@@ -16,6 +16,16 @@ overzicht zichtbaar dat elke kwetsbaarheid is onderbouwd én afgehandeld.
 | **HFE-02** | Missing authz + CSRF + IDOR (CWE-862/352/639) | A.8.3 · A.8.5 | Datamanipulatie (I=5) | [voor](../pentest/bevinding-hfe-02-voor.md) · [bewijs](../pentest/bewijs/) (`hfe02-*`) | `requirePrivilege("Delete Encounters")` + `isSameOrigin()` + fail-closed | [na ✅](../pentest/bevinding-hfe-02-na.md) (A2 + positieve controle) | Opgelost |
 | **HFE-03** | Open redirect (CWE-601) | A.8.5 | D2 datalek/phishing | [voor](../pentest/bevinding-hfe-03-voor.md) · [bewijs](../pentest/bewijs/) (`hfe03-*`) | `isSafeRelativeUrl()` — alleen interne relatieve paden | [na ✅](../pentest/bevinding-hfe-03-na.md) (A3) | Opgelost |
 
+## 1a. Geïdentificeerd, (nog) niet aangetoond of gemitigeerd
+
+Bevinding uit code-review die buiten de pentest-selectie van §1 viel — wel
+geïdentificeerd en expliciet vastgelegd, maar nog niet met een live exploit
+aangetoond en nog niet in de modulecode gefixt.
+
+| ID | Kwetsbaarheid (CWE) | NEN-control | Risico | Bron | Aanbevolen vervolg | Status |
+|----|---------------------|-------------|--------|------|---------------------|--------|
+| **HFE-009** | Onveilige deserialisatie in `loadSession.form` (eigen omod-code, geen CVE) — CWE-502 | A.8.3 · A.8.8 | RCE-potentieel (i.c.m. gadget-chain HFE-005) | [attack-surface-mapping E05](../pentest/00-attack-surface-mapping.md) · [backlog HFE-009](06-security-backlog.md#65-eigen-code-bevinding-buiten-snyk-scope-hfe-009) | Live exploit (volgende pentestronde) + allow-list/`ObjectInputFilter` of JSON i.p.v. native serialisatie | **Open — niet gemitigeerd** |
+
 ## 2. Kwetsbare afhankelijkheden
 
 | ID | Component / CVE | NEN-control | Contextuele score | Bron | Advies | Status |
@@ -33,15 +43,4 @@ overzicht zichtbaar dat elke kwetsbaarheid is onderbouwd én afgehandeld.
 
 | Control | Gap | Geraakt risico | Verbetering | Bron |
 |---------|-----|----------------|-------------|------|
-| **A.8.3** Toegangsbeveiliging | Geen `@Authorized` op service-laag; geen privilege-matrix | D5 onbevoegde inzage | `@Authorized` op schrijfmethoden + privilege-matrix documenteren | [gap A.8.3](01-gap-analyse.md#a83--toegangsbeveiliging-access-restriction) |
-| **A.8.5** Veilige authenticatie | Geen CSRF-bescherming; sessiebeheer niet modulespecifiek | D2 datalek | Synchronizer-token / Spring Security CSRF modulebreed | [gap A.8.5](01-gap-analyse.md#a85--veilige-authenticatie-secure-authentication) |
-| **A.8.15** Logging | PII plaintext in logs; geen retentie/rotatie; geen integriteit | D6 log-manipulatie | Pseudonimiseren; `RollingFileAppender` (≥1 jr); centrale log-aggregatie | [gap A.8.15](01-gap-analyse.md#a815--logging) |
-
----
-
-## Legenda
-
-- **NEN-control** verwijst naar NEN-7510:2024-2 (A.8.x). Controls A.8.8 en A.8.28 komen naast de primair geauditeerde
-  A.8.3/A.8.5/A.8.15 voor bij de afhankelijkheids- en front-end-bevindingen.
-- **Contextuele score** = CVSS bijgesteld op bereikbaarheid + geraakt kroonjuweel;
-- **Status:** Opgelost = gemitigeerd én met hertest aangetoond · Open = in patchadvies/backlog.
+| **A.8.3** Toegangsbeveiliging | Geen `@Authorized` op service-laag; geen privilege-matrix | D5 onbevoegde inzage | `@Authorized` op schrijfmethoden + privilege-matrix documenteren | [gap A.8.3](01-gap-analyse.md#

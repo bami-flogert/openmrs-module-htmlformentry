@@ -103,7 +103,7 @@ Alle resolving-logica zou dan in `FormEntrySession` terechtkomen, en de controll
 **Voordelen:** architectureel de meest zuivere oplossing; alles op de juiste laag.
 
 **Nadelen:**
-- `FormEntrySession` heeft al ~1000 LOC en een eigen complexiteitsprobleem
+- `FormEntrySession` heeft al ~1228 LOC en een eigen complexiteitsprobleem
 - Elk wijziging aan `FormEntrySession` raakt de volledige `api`-module, met een hoog regressierisico
 - Herschrijven van `FormEntrySession` valt ruim buiten de sprintcapaciteit
 - Dit is een strategisch verbeterpunt voor een latere fase, niet voor deze PoC
@@ -205,7 +205,7 @@ Als praktische maatstaf voor SRP gold het streven naar `< 200 LOC` voor de contr
 | `handleSubmit` | CC 22, ~65 LOC, niet gerefactord | Middel | Extract Method of Extract Class in volgende sprint |
 | `PopupWidgetController.personSearch` | CC 55 - grootste hotspot buiten PoC | Laag | Aparte PoC nodig |
 | `HtmlFormSearchController.conceptSearch` | CC 29 | Laag | Vergelijkbaar patroon als deze PoC |
-| `FormEntrySession` | ~1000 LOC, architecturele schuld | Hoog strategisch | Grote refactor; valt buiten sprintcapaciteit |
+| `FormEntrySession` | ~1228 LOC, architecturele schuld | Hoog strategisch | Grote refactor; valt buiten sprintcapaciteit |
 | Controller LOC | 567 regels - boven 200 LOC-drempel | Laag | Vervolgstap na handleSubmit-refactor |
 
 ---
