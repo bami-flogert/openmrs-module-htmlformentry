@@ -81,7 +81,7 @@ Hetzelfde gebouwde OMOD-artefact en SBOM uit één workflow-run worden gebundeld
 | PR CI | Vóór merge | Merge blokkeerbaar via branch protection | A.8.3 / A.8.5 — gecontroleerde wijzigingen |
 | SonarCloud | Op PR + push `main` | CI-job faalt bij Failed gate (`sonar.qualitygate.wait=true`) | A.8.15 — statische analyse |
 
-**Testscope:** CI en deploy draaien `mvn -B -pl omod test verify` (OMOD PoC-scope). Module-brede regressietests in `api-tests` (~70 bekende failures) vallen buiten de CI-gate; zie teststrategie in `opdracht/plan-teststrategie-goed.md`.
+**Testscope:** CI en deploy draaien `mvn -B -pl omod test verify` (OMOD PoC-scope). Module-brede regressietests in `api-tests` (~70 bekende failures) vallen buiten de CI-gate; zie teststrategie in [`03-teststrategie.md`](03-teststrategie.md).
 
 Productie smoke test gebruikt poort **80**; overige omgevingen poort **8080**.
 
@@ -231,4 +231,4 @@ if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.re
 
 **Follow-up:** bij externe contributors de `if`-guard toevoegen aan `.github/workflows/ci.yml` (job `sonarcloud`).
 
-Module-specifieke security-hiaten staan in [`auditrapport/01-gap-analyse.md`](auditrapport/01-gap-analyse.md). Het CVE/dependency-register staat in [`auditrapport/06-security-backlog.md`](auditrapport/06-security-backlog.md) (auditrapport bijlage I); pentest-bevindingen HFE-01 t/m HFE-04 zijn gemitigeerd, H-prioriteiten in de backlog (o.a. log4j, jQuery) staan nog open. Zie ook [`pentest/README.md`](pentest/README.md).
+Module-specifieke security-hiaten staan in [`auditrapport/01-gap-analyse.md`](auditrapport/01-gap-analyse.md). Het CVE/dependency-register staat in [`auditrapport/06-security-backlog.md`](auditrapport/06-security-backlog.md) (auditrapport bijlage I); pentest-bevindingen HFE-01 t/m HFE-04 zijn gemitigeerd, H-prioriteiten in de backlog (o.a. log4j, jQuery) staan nog open. Zie ook [`pentest/README.md`](pentest/README
