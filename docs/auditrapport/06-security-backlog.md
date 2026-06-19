@@ -60,4 +60,27 @@ De SCA-scan uit de CI-pipeline vond over alle Maven-submodules samen **223 uniek
 
 ## 6.5 Eigen-code bevinding buiten Snyk-scope (HFE-009)
 
-De Snyk SCA-scan vindt alleen kwetsbaarheden in afhankelijkheden, niet in 
+De Snyk SCA-scan vindt alleen kwetsbaarheden in afhankelijkheden, niet in de eigen
+modulecode. Net als bij de gebundelde JavaScript-libraries (zie §6.1) is dat een blinde
+vlek die we met handmatige code-review hebben gedicht. Bij die review viel
+`HtmlFormEntryController.loadSession()` (`POST /module/htmlformentry/loadSession.form`,
+regel 66-73) op: de methode decodeert de `data`-parameter uit het request base64 en geeft
+het resultaat direct aan `new ObjectInputStream(...).readObject()`, zonder allow-list,
+look-ahead-deserialisatie of een aparte privilege-check in de controller. Dat is een
+klassieke CWE-502 (onveilige deserialisatie) — in combinatie met een gadget-chain op het
+classpath (zie HFE-005, commons-collections) potentieel **remote code execution**.
+
+Deze bevinding is in de huidige ronde **niet** meegenomen in de pentest-selectie
+([attack-surface-mapping §5](../pentest/00-attack-surface-mapping.md) markeert het
+endpoint E05 als 🟡 "te onderzoeken") en is dus ook niet in de modulecode gemitigeerd.
+We nemen hem hier bewust expliciet op als **open, prioriteit H**, in plaats van hem
+alleen oppervlakkig in de aanvalsoppervlak-mapping te laten staan, zodat dit zichtbaar
+een bekend en nog niet afgehandeld risico is — geen gemiste bevinding.
+**Aanbevolen vervolgstap:** in een volgende sprint live exploiteren (pentest-bevinding
+HFE-05) en daarna mitigeren door de eigen-class-deserialisatie te vervangen door een
+veilig formaat (bijv. JSON) of, als `ObjectInputStream` nodig blijft, een
+class-allow-list (`ObjectInputFilter`, Java 9+) toe te voegen.
+
+## 6.6 Vervolg
+
+De H-prioriteiten uit dit register zijn de input voor het patchadvies (h7) en voor de keuze van de PoC-mitigaties in Sprint 3 (taak 3.1). HFE-003 en HFE-006 zijn daarvoor de beste kandidaten. Beide zijn binnen de module zelf op te lossen, zonder dat er een platform-upgrade nodig is. En voor beide kun je met een hertest aantonen dat de fix werkt (taak 3.2/3.3). **HFE-009** (eigen-code deserialisatie) is qua impact minstens zo urgent, maar valt buiten de huidige PoC-scope (geen dependency-upgrade, wel een eigen-codefix) en is daarom apart benoemd in plaats van stilzwijgend buiten dit register gehouden.

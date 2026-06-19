@@ -43,4 +43,15 @@ aangetoond en nog niet in de modulecode gefixt.
 
 | Control | Gap | Geraakt risico | Verbetering | Bron |
 |---------|-----|----------------|-------------|------|
-| **A.8.3** Toegangsbeveiliging | Geen `@Authorized` op service-laag; geen privilege-matrix | D5 onbevoegde inzage | `@Authorized` op schrijfmethoden + privilege-matrix documenteren | [gap A.8.3](01-gap-analyse.md#
+| **A.8.3** Toegangsbeveiliging | Geen `@Authorized` op service-laag; geen privilege-matrix | D5 onbevoegde inzage | `@Authorized` op schrijfmethoden + privilege-matrix documenteren | [gap A.8.3](01-gap-analyse.md#a83--toegangsbeveiliging-access-restriction) |
+| **A.8.5** Veilige authenticatie | Geen CSRF-bescherming; sessiebeheer niet modulespecifiek | D2 datalek | Synchronizer-token / Spring Security CSRF modulebreed | [gap A.8.5](01-gap-analyse.md#a85--veilige-authenticatie-secure-authentication) |
+| **A.8.15** Logging | PII plaintext in logs; geen retentie/rotatie; geen integriteit | D6 log-manipulatie | Pseudonimiseren; `RollingFileAppender` (≥1 jr); centrale log-aggregatie | [gap A.8.15](01-gap-analyse.md#a815--logging) |
+
+---
+
+## Legenda
+
+- **NEN-control** verwijst naar NEN-7510:2024-2 (A.8.x). Controls A.8.8 en A.8.28 komen naast de primair geauditeerde
+  A.8.3/A.8.5/A.8.15 voor bij de afhankelijkheids- en front-end-bevindingen.
+- **Contextuele score** = CVSS bijgesteld op bereikbaarheid + geraakt kroonjuweel;
+- **Status:** Opgelost = gemitigeerd én met hertest aangetoond · Open = in patchadvies/backlog.
