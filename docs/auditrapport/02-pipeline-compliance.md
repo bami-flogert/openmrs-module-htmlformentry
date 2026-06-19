@@ -36,4 +36,4 @@
 | Logging & audittrail (A.8.15) | ⚠️ Gedeeltelijk — sterker dan initieel; Snyk niet hard gate |
 | OTAP-structuur | ✅ Vier fasen aanwezig; ⚠️ geen persistente hosts |
 
-**Prioritaire vervolgacties:** GitHub Environment protection rules en branch protection handmatig afronden (zie [`otap.md`](../otap.md)), Snyk als harde gate overwegen, persistente OTAP-hosts bij productie-inzet
+**Prioritaire vervolgacties:** GitHub Environment protection rules en branch protection handmatig afronden (zie [`otap.md`](../otap.md)), Snyk als harde gate overwegen, persistente OTAP-hosts bij productie-inzet.
