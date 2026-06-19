@@ -43,6 +43,6 @@ De module telt meerdere tientallen Java-klassen, een eigen tag-library, een Velo
 | [`auditrapport/01-gap-analyse.md`](auditrapport/01-gap-analyse.md) | Gap-analyse NEN-7510 controls A.8.3 / A.8.5 / A.8.15 |
 | [`auditrapport/02-pipeline-compliance.md`](auditrapport/02-pipeline-compliance.md) | Pipeline-compliance (bijlage B) |
 | [`otap.md`](otap.md) | OTAP-pipeline: branches, omgevingen, workflows |
-| [`onderhoudbaarheid/01-nfr-onderhoudbaarheid.md`](onderhoudbaarheid/01-nfr-onderhoudbaarheid.md) | NFR onderhoudbaarheid (JaCoCo, SonarCloud) |
+| [`01-nfr-onderhoudbaarheid.md`](01-nfr-onderhoudbaarheid.md) | NFR onderhoudbaarheid (JaCoCo, SonarCloud) |
 | [`security.md`](security.md) | Beveiligingsbeleid en kwetsbaarheidsmelding |
 
