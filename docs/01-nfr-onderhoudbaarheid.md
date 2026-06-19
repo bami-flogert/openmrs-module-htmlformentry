@@ -16,12 +16,11 @@ Voor onderhoudbaarheid kijken we naar de ISO/IEC 25010, specifiek **modulariteit
 
 | Document                                                           | Scope                                                                        |
 | ------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
-| [`opdracht/non-functionals.md`](../../opdracht/non-functionals.md) | Security, compliance, CI/CD, risico                                          |
 | **Dit document**                                                   | Onderhoudbaarheid (complexiteit, duplicatie, smells, coverage, quality gate) |
 
 Koppelingen:
 
-- **NFR-T1** (tests op geprioriteerde hotspots) uit `non-functionals.md` → ondersteunt **NFR-M4** (testbaarheid).
+- **NFR-T1** (tests op geprioriteerde hotspots) → ondersteunt **NFR-M4** (testbaarheid).
 - **NFR-D1 / NFR-D3** (CI verplicht, security gates) → uitgebreid met **NFR-M6/M7** (SonarCloud quality gate).
 
 > **Afwijking t.o.v. eerdere versie:** de rubric vereist geen percentage coverage. NFR-M4 en NFR-T1 zijn daarom herzien naar **risicogebaseerde dekking** van geprioriteerde hotspots (zie [`onderhoudbaarheidsrapport.md`](onderhoudbaarheidsrapport.md) §5). JaCoCo blijft als **meetwaarde** in baseline en validatie.
@@ -36,7 +35,7 @@ Koppelingen:
 | **PoC / verbetering**         | OMOD-laag — kritieke webcontrollers (voorlopig: `HtmlFormEntryController`, eventueel `HtmlFormEncounterController`) | Beheersbare refactoring binnen sprintcapaciteit                            |
 | **Buiten PoC (documenteren)** | `FormEntrySession` en overige `api`-klassen                                                                         | Vermelden in analyse als toekomstig verbeterpunt; niet negeren in baseline |
 
-> **Motivatie PoC-scope:** de OMOD-controllers vormen het web-ingangspunt voor form entry. `HtmlFormEntryController` bevat expliciet technische schuld (logica in `onSubmit`). De `api`-laag (`FormEntrySession`, ~1000 LOC) is waarschijnlijk de grootste hotspot, maar valt buiten de eerste PoC vanwege omvang en risico op regressie.
+> **Motivatie PoC-scope:** de OMOD-controllers vormen het web-ingangspunt voor form entry. `HtmlFormEntryController` bevat expliciet technische schuld (logica in `onSubmit`). De `api`-laag (`FormEntrySession`, ~1228 LOC) is waarschijnlijk de grootste hotspot, maar valt buiten de eerste PoC vanwege omvang en risico op regressie.
 
 ---
 
