@@ -218,13 +218,13 @@ Module-brede failures worden **eerlijk gerapporteerd** in `[04-testresultaten-ba
 | Testklasse                                               | Fase                 | Te testen gedrag                                                                   | Aantal | Type                                                                     |
 | -------------------------------------------------------- | -------------------- | ---------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------ |
 | `HtmlFormEntryControllerTest`                            | Vóór refactor        | Request-parameters → sessie/exception (T1–T9)                                      | 10     | Characterization / component                                             |
-| `HtmlFormEntryControllerExtractedMethodsTest`            | Na refactor          | Geëxtraheerde controller-methoden (package-private; zelfde package als controller) | 15     | Unit (`omod`, package `org.openmrs.module.htmlformentry.web.controller`) |
+| `HtmlFormEntryControllerExtractedMethodsTest`            | Na refactor          | Geëxtraheerde controller-methoden (package-private; zelfde package als controller) | 18     | Unit (`omod`, package `org.openmrs.module.htmlformentry.web.controller`) |
 | `FormEntrySessionValidateNotModifiedSinceTimestampsTest` | Na refactor          | Optimistic concurrency validatie                                                   | 8      | Unit (`api-tests`)                                                       |
 | `FormEntryRequestResolverTest`                           | Na PoC *(optioneel)* | Logica in geëxtraheerde klasse                                                     | 4–6    | Unit                                                                     |
 | `FormEntrySessionFactoryTest`                            | Na PoC *(optioneel)* | Factory-keuze constructor                                                          | 2–3    | Unit                                                                     |
 
 
-**§7.2b — Extract unit tests (na merge refactor-branch):** `HtmlFormEntryControllerExtractedMethodsTest` en `FormEntrySessionValidateNotModifiedSinceTimestampsTest` vullen de characterization-laag aan; ze mogen het gedrag in §7.4 niet tegenspreken. `resolveFormEntryContext` wordt niet apart unit-getest (vereist `Context`/spy); die paden zitten in de characterization tests T1–T4 en T2.
+**§7.2b — Extract unit tests (na merge refactor-branch):** `HtmlFormEntryControllerExtractedMethodsTest` en `FormEntrySessionValidateNotModifiedSinceTimestampsTest` vullen de characterization-laag aan; ze mogen het gedrag in §7.4 niet tegenspreken. `resolveFormEntryContext` heeft twee dedicated unit tests (encounterId-pad en which-pad); overige paden blijven gedekt door characterization tests T1–T4 en T2.
 
 ### 7.3 Paden — `getFormEntrySession` (prio 1)
 
