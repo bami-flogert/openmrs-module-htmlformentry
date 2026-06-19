@@ -224,7 +224,7 @@ Module-brede failures worden **eerlijk gerapporteerd** in `[04-testresultaten-ba
 | `FormEntrySessionFactoryTest`                            | Na PoC *(optioneel)* | Factory-keuze constructor                                                          | 2–3    | Unit                                                                     |
 
 
-**§7.2b — Extract unit tests (na merge refactor-branch):** `HtmlFormEntryControllerExtractedMethodsTest` en `FormEntrySessionValidateNotModifiedSinceTimestampsTest` vullen de characterization-laag aan; ze mogen het gedrag in §7.4 niet tegenspreken. `resolveFormEntryContext` heeft twee dedicated unit tests (encounterId-pad en which-pad); overige paden blijven gedekt door characterization tests T1–T4 en T2.
+**§7.2b — Extract unit tests (na merge refactor-branch):** `HtmlFormEntryControllerExtractedMethodsTest` en `FormEntrySessionValidateNotModifiedSinceTimestampsTest` vullen de characterization-laag aan; ze mogen het gedrag in §7.4 niet tegenspreken. `resolveFormEntryContext` heeft drie dedicated unit tests (encounterId-pad en which-pad); overige paden blijven gedekt door characterization tests T1–T4 en T2.
 
 ### 7.3 Paden — `getFormEntrySession` (prio 1)
 
