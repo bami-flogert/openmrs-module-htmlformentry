@@ -41,6 +41,14 @@ Global Properties
 Project Resources
 ---------
 
+## LU2 — Onderhoudbaarheid & OTAP (Avans)
+
+Dit project bevat naast de module ook LU2-documentatie: baseline-analyse, NFR's, teststrategie, PoC-refactor en validatie.
+
+- **Startpunt:** [`docs/onderhoudbaarheid/README.md`](docs/onderhoudbaarheid/README.md)
+- **OTAP/CI:** [`docs/otap.md`](docs/otap.md) · [`docs/sonarcloud-setup.md`](docs/sonarcloud-setup.md)
+- **Validatie PoC:** [`docs/07-validatie-voor-na.md`](docs/07-validatie-voor-na.md)
+
 [Wiki page][]: You can find screenshots, example HTML code, and flowsheets on this page
 
 [HTML Form Entry Module]: https://wiki.openmrs.org/display/docs/HTML+Form+Entry+Module
