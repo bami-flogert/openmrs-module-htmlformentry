@@ -38,7 +38,7 @@ AI versnelde het schrijven van 10 testmethoden en documentatie. **Correctheid** 
 
 ## Reflectie
 
-AI is geschikt voor **repetitieve, specificatie-gedreven** tests (pad-tabel → JUnit). Voor **integratietest-setup** (Spring, Hibernate, datasets) is menselijke validatie essentieel. Dit past bij de projectkeuze: AI-ondersteund, mens reviewt en voert uit (`plan-teststrategie-goed.md` §8.1).
+AI is geschikt voor **repetitieve, specificatie-gedreven** tests (pad-tabel → JUnit). Voor **integratietest-setup** (Spring, Hibernate, datasets) is menselijke validatie essentieel. Dit past bij de projectkeuze: AI-ondersteund, mens reviewt en voert uit.
 
 ---
 
@@ -50,3 +50,5 @@ AI is geschikt voor **repetitieve, specificatie-gedreven** tests (pad-tabel → 
 | Tests | 10 (T1–T9 incl. T4b) |
 | Commando | `mvn -pl omod test verify` |
 | JaCoCo hotspot | `HtmlFormEntryController` ~**53%** lines (was 2,1% baseline) |
+
+> **Momentopname (15 juni 2026):** de cijfers hierboven (34/34, 15 extract unit tests, ~53%) zijn de stand vóór afronding van de Extract Method-PoC. Na verdere extractie zijn er meer tests toegevoegd; de actuele eindstand (18 extract unit tests, 67 omod-tests, ~63%) staat in [`03-teststrategie.md`](03-teststrategie.md) en [`07-validatie-voor-na.md`](07-validatie-voor-na.md).
