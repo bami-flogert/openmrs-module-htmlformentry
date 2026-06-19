@@ -20,7 +20,7 @@
 2. [Scope & Context](#2-scope--context)
 3. [Audit Methodologie](#3-audit-methodologie)
 4. [Risico-analyse & Bevindingen](#4-risico-analyse--bevindingen)
-5. [SBOM & Supply Chain Security](#5-sbom--supply-chain-security)
+5. [SBOM & supply chain-beveiliging](#5-sbom--supply-chain-beveiliging)
 6. [Conclusie & Advies](#6-conclusie--advies)
 7. [Bijlagen](#7-bijlagen)
 
@@ -76,7 +76,7 @@ BIV-classificatie staan in [`03-assets.md`](03-assets.md).
 - **NEN-7510:2024-2** — primair getoetst op de controls **A.8.3**,
   **A.8.5** en **A.8.15**; zie [gap-analyse](01-gap-analyse.md).
 - **AVG** — bijzondere persoonsgegevens; zie [DPIA-check](08-dpia-check.md).
-- **EU Cyber Resilience Act (CRA)** — supply-chain/SBOM-context en essentiële eisen; zie [§5](#5-sbom--supply-chain-security) en de [CRA-mapping](11-cra-mapping.md) (bijlage H).
+- **EU Cyber Resilience Act (CRA)** — supply-chain/SBOM-context en essentiële eisen; zie [§5](#5-sbom--supply-chain-beveiliging) en de [CRA-mapping](11-cra-mapping.md) (bijlage H).
 
 **Scope-grens.**
 
@@ -150,6 +150,16 @@ Naast deze drie is een vierde, privacy-gerelateerde bevinding vastgelegd en hert
 gemitigeerd door alleen numerieke `patientId`/`userId`/IDs te loggen en is met een
 hertest bevestigd ([voor](../pentest/bevinding-hfe-04-voor.md) · [na ✅](../pentest/bevinding-hfe-04-na.md)).
 
+**Bekend, nog niet gemitigeerd risico (HFE-009).** Bij de code-review viel een vijfde
+endpoint op dat **niet** in de pentest-selectie zat en dus niet live geëxploiteerd of
+gefixt is: `HtmlFormEntryController.loadSession()` deserialiseert een base64-gecodeerde
+`data`-parameter rechtstreeks met `ObjectInputStream.readObject()` (CWE-502), zonder
+allow-list. In combinatie met een gadget-chain-dependency (HFE-005) is dit potentieel
+**remote code execution**. We nemen dit hier expliciet op als open punt — zie
+[attack-surface-mapping E05](../pentest/00-attack-surface-mapping.md) en
+[security backlog HFE-009](06-security-backlog.md#65-eigen-code-bevinding-buiten-snyk-scope-hfe-009)
+— in plaats van het stil te laten passeren omdat het buiten de PoC-mitigatieronde viel.
+
 ### 4.4 Kwetsbare afhankelijkheden
 
 De [security backlog](06-security-backlog.md) (bijlage I) registreert de
@@ -189,7 +199,7 @@ en scoort daardoor op de hoofdfunctionaliteit redelijk, maar op modulecode-nivea
 zijn reële bevindingen aangetoond. De drie controls A.8.3, A.8.5 en A.8.15 zijn
 **gedeeltelijk** compliant (zie [gap-analyse](01-gap-analyse.md)). De drie meest
 kritische, zelf-exploiteerbare kwetsbaarheden (HFE-01/02/03) zijn met een pentest
-aangetoond en vervolgens **opgelost en hertest** ([§4.3](#43-aangetoonde-kwetsbaarheden-penetratietest)).
+aangetoond en vervolgens **opgelost en hertest** ([§4.3](#43-aangetoonde-kwetsbaarheden)).
 Het grootste resterende risico zit in **verouderde afhankelijkheden** die deels via
 het platform binnenkomen.
 
@@ -199,7 +209,8 @@ het platform binnenkomen.
 |-----------|-------------|------------|
 | **P1 — direct** | Patch de critical Maven-/Docker-componenten in de geadviseerde volgorde (Jackson, MySQL 5.6→8.0, commons-fileupload). Verwachte risicoreductie 100% bij volledige uitvoering. | [patchadvies §2–4](07-patchadvies.md) |
 | **P1 — direct** | Borg de reeds doorgevoerde code-mitigaties (HFE-01/02/03) in een release en regressietest. | [pentest `-na`](../pentest/) |
-| **P2 — inplannen** | Upgrade de gebundelde front-end-libraries (jQuery/jQuery UI/handlebars, HFE-003/007) en zet de groovy-scope op `test` (HFE-006) — beide binnen de module oplosbaar. | [backlog §6.5](06-security-backlog.md) |
+| **P1 — direct** | Onderzoek en mitigeer de onveilige deserialisatie in `loadSession.form` (HFE-009, CWE-502, RCE-potentieel) — nog niet gepentest of gefixt. | [backlog §6.5](06-security-backlog.md) |
+| **P2 — inplannen** | Upgrade de gebundelde front-end-libraries (jQuery/jQuery UI/handlebars, HFE-003/007) en zet de groovy-scope op `test` (HFE-006) — beide binnen de module oplosbaar. | [backlog §6.6](06-security-backlog.md) |
 | **P2 — inplannen** | Dicht de gap-hiaten: `@Authorized` op de service-laag (A.8.3), CSRF-bescherming modulebreed (A.8.5), PII-pseudonimisering + logretentie (A.8.15). | [gap-analyse](01-gap-analyse.md) |
 | **P3 — borgen** | Houd de OTAP-scheiding en SBOM/Dependabot-pipeline operationeel; verifieer niet-herleidbare data per omgeving. | [pipeline-compliance](02-pipeline-compliance.md), [DPIA](08-dpia-check.md) |
 
@@ -227,5 +238,3 @@ De volledige verbeteraanpak met prioritering staat in de
 | J | Patchadvies (SBOM/CVE) | [`07-patchadvies.md`](07-patchadvies.md) | Aanwezig — gegenereerd via Snyk + [`generate-patch-advice.py`](../../.github/scripts/generate-patch-advice.py) |
 | K | DPIA-check (AVG art. 9/35) | [`08-dpia-check.md`](08-dpia-check.md) | Aanwezig (2026-06-15) |
 | L | Verantwoording (AI-)tooling | [`09-verantwoording-tooling.md`](09-verantwoording-tooling.md) | Aanwezig (2026-06-18) — afgerond |
-
-
